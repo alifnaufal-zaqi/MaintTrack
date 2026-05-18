@@ -6,8 +6,12 @@ import { createClient } from "@/lib/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import * as z from "zod";
 
-export async function login(state: FormState, formData: FormData) {
+export async function login(
+  state: FormState<z.infer<typeof LoginSchema>>,
+  formData: FormData
+) {
   const validatedFields = LoginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
@@ -47,7 +51,7 @@ export async function login(state: FormState, formData: FormData) {
     });
   }
 
-  revalidatePath("/dashboard", "layout");
+  revalidatePath("/", "layout");
 
   if (profile?.role === "admin") {
     redirect("/dashboard/admin");

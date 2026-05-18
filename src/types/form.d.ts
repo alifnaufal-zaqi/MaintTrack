@@ -1,10 +1,6 @@
-export type FormState =
+export type FormState<T> =
   | {
-      errors?: {
-        name?: string[];
-        email?: string[];
-        password?: string[];
-      };
+      errors?: T;
       message?: string;
     }
   | undefined;

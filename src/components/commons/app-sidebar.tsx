@@ -1,3 +1,5 @@
+"use client";
+
 import { SIDEBAR_MENU } from "@/constants/sidebar-menu";
 import {
   Sidebar,
@@ -12,6 +14,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar,
 } from "../ui/sidebar";
 import { Profile } from "@/types/auth";
 import {
@@ -20,11 +23,22 @@ import {
   CollapsibleTrigger,
 } from "../ui/collapsible";
 import Link from "next/link";
-import { DropdownMenu, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { ChevronRight, EllipsisVertical } from "lucide-react";
+import { ChevronRight, EllipsisVertical, LogOut } from "lucide-react";
+import { logout } from "@/app/actions/logout";
 
 export default function AppSidebar({ profile }: { profile: Profile }) {
+  const { isMobile } = useSidebar();
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
@@ -124,6 +138,41 @@ export default function AppSidebar({ profile }: { profile: Profile }) {
                   <EllipsisVertical className="ml-auto size-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="min-w-56 rounded-lg"
+                side={isMobile ? "bottom" : "right"}
+                align="end"
+                sideOffset={4}
+              >
+                <DropdownMenuLabel className="p-0 font-normal">
+                  <div className="flex items-center gap-2 px-1 py-1.5">
+                    <Avatar className="h-8 w-8 rounded-lg">
+                      <AvatarImage
+                        src={profile.photoProfileUrl}
+                        alt={profile.fullname}
+                      />
+                      <AvatarFallback className="rounded-lg">
+                        {profile.fullname?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="leading-tight">
+                      <h4 className="truncate font-medium">
+                        {profile.fullname}
+                      </h4>
+                      <p className="text-muted-foreground truncate text-xs capitalize">
+                        {profile.role}
+                      </p>
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onClick={() => logout()}>
+                    <LogOut />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
