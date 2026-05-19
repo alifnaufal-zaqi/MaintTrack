@@ -3,6 +3,16 @@
 import { ActionButton } from "@/components/commons/action-button";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -21,7 +31,7 @@ import { Category } from "@/types/categories";
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { ChangeEvent } from "react";
+import { ChangeEvent, useState } from "react";
 import { toast } from "sonner";
 
 export function AssetsCategories() {
@@ -47,6 +57,13 @@ export function AssetsCategories() {
       return data;
     },
   });
+  const [dialogOpen, setDialogOpen] = useState<{
+    update: boolean;
+    delete: boolean;
+  }>({ update: false, delete: false });
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null
+  );
 
   return (
     <div className="w-full space-y-4">
@@ -87,7 +104,18 @@ export function AssetsCategories() {
                 <TableCell className="px-6 py-3">{index + 1}</TableCell>
                 <TableCell className="px-6 py-3">{category.name}</TableCell>
                 <TableCell className="px-6 py-3">
-                  <ActionButton isDelete isUpdate />
+                  <ActionButton
+                    isDelete
+                    isUpdate
+                    onUpdateClick={() => {
+                      setSelectedCategory(category);
+                      setDialogOpen((prev) => ({ ...prev, update: true }));
+                    }}
+                    onDeleteClick={() => {
+                      setSelectedCategory(category);
+                      setDialogOpen((prev) => ({ ...prev, delete: true }));
+                    }}
+                  />
                 </TableCell>
               </TableRow>
             ))}
@@ -117,6 +145,70 @@ export function AssetsCategories() {
           </TableBody>
         </Table>
       </Card>
+
+      {/* Dialog Delete */}
+      <Dialog
+        open={dialogOpen.delete}
+        onOpenChange={(value) =>
+          setDialogOpen((prev) => ({ ...prev, delete: value }))
+        }
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Peringatan</DialogTitle>
+            <DialogDescription>
+              Apakah anda yakin ingin menghapus kategori ini?
+            </DialogDescription>
+            <DialogFooter>
+              <DialogClose>
+                <Button variant={"outline"}>Batal</Button>
+              </DialogClose>
+              <Button variant={"destructive"}>Ya</Button>
+            </DialogFooter>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Edit */}
+      {selectedCategory && (
+        <Dialog
+          open={dialogOpen.update}
+          onOpenChange={(value) =>
+            setDialogOpen((prev) => ({ ...prev, update: value }))
+          }
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Form Edit Kategori</DialogTitle>
+              <DialogDescription>
+                Edit Kategori Aset anda Disini
+              </DialogDescription>
+            </DialogHeader>
+            <form action="">
+              <FieldSet>
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="name">Nama Kategori</FieldLabel>
+                    <Input
+                      type="text"
+                      id="name"
+                      name="name"
+                      placeholder="Masukan nama kategori aset"
+                      defaultValue={selectedCategory.name}
+                    />
+                  </Field>
+                </FieldGroup>
+              </FieldSet>
+              <DialogFooter className="mt-4">
+                <DialogClose>
+                  <Button variant={"outline"}>Batal</Button>
+                </DialogClose>
+                <Button>Edit</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
