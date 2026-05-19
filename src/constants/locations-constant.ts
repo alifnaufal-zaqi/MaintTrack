@@ -1,0 +1,1 @@
+export const LOCATIONS_TABLE_HEADER = ["no", "nama","tipe", "deskripsi", "aksi"];

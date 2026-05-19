@@ -117,7 +117,7 @@ export function AssetsCategories() {
                     }}
                   />
                 </TableCell>
-              </TableRow>
+              </TableRow>                                
             ))}
             {categories?.length === 0 && !isLoading && (
               <TableRow>
