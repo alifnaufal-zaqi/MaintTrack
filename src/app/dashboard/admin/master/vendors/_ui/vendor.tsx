@@ -34,18 +34,18 @@ const VENDORS_TABLE_HEADER = [
   "Logo",
   "Nama Vendor",
   "Email",
-  "Kontak",
+  "Nomor Telepon",
   "Alamat",
   "Aksi",
 ];
 
 type Vendor = {
   id: string;
-  logo: string;
   name: string;
   email: string;
-  contact: string;
+  phone_number: string;
   address: string;
+  logo_url: string;
 };
 
 export function AssetsVendors() {
@@ -67,7 +67,7 @@ export function AssetsVendors() {
         .ilike("name", `%${keyword}%`);
 
       if (error) {
-        toast.error("Gagal", {
+        toast.error("Gagal Memuat Data", {
           description: error.message,
         });
       }
@@ -80,7 +80,7 @@ export function AssetsVendors() {
     <div className="w-full space-y-4">
 
       {/* TITLE */}
-      <h1 className="text-xl text-primary font-bold">
+      <h1 className="text-xl font-bold text-primary">
         Manajemen Data Vendor
       </h1>
 
@@ -89,7 +89,7 @@ export function AssetsVendors() {
 
         <Input
           type="search"
-          placeholder="Cari data vendor"
+          placeholder="Cari data vendor..."
           onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleKeywordChange(event.target.value)
           }
@@ -97,7 +97,7 @@ export function AssetsVendors() {
 
         <Link href={"/dashboard/admin/master/vendors/create"}>
           <Button>
-            <Plus />
+            <Plus className="w-4 h-4 mr-1" />
             Tambah Vendor
           </Button>
         </Link>
@@ -105,19 +105,19 @@ export function AssetsVendors() {
       </Card>
 
       {/* TABLE */}
-      <Card className="p-0">
+      <Card className="p-0 overflow-hidden">
 
-        <Table className="w-full rounded-lg overflow-hidden">
+        <Table className="w-full">
 
           {/* HEADER */}
-          <TableHeader className="bg-muted sticky top-0 z-10">
+          <TableHeader className="bg-muted">
 
             <TableRow>
 
               {VENDORS_TABLE_HEADER.map((head) => (
                 <TableHead
                   key={head}
-                  className="capitalize px-6 py-3"
+                  className="px-6 py-3 font-semibold"
                 >
                   {head}
                 </TableHead>
@@ -138,9 +138,9 @@ export function AssetsVendors() {
                 <TableCell className="px-6 py-3">
 
                   <img
-                    src={vendor.logo}
+                    src={vendor.logo_url}
                     alt={vendor.name}
-                    className="w-12 h-12 rounded object-cover border"
+                    className="w-12 h-12 rounded-md object-cover border"
                   />
 
                 </TableCell>
@@ -155,9 +155,9 @@ export function AssetsVendors() {
                   {vendor.email}
                 </TableCell>
 
-                {/* CONTACT */}
+                {/* PHONE */}
                 <TableCell className="px-6 py-3">
-                  {vendor.contact}
+                  {vendor.phone_number}
                 </TableCell>
 
                 {/* ADDRESS */}
@@ -200,11 +200,11 @@ export function AssetsVendors() {
                   className="h-24"
                 >
 
-                  <div className="flex flex-col gap-2 justify-center items-center w-full">
+                  <div className="flex flex-col justify-center items-center gap-2">
 
                     <Spinner />
 
-                    <span>Memuat...</span>
+                    <span>Memuat data vendor...</span>
 
                   </div>
 
