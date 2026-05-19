@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   MapPin,
   Tag,
+  Package,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -53,6 +54,11 @@ export const SIDEBAR_MENU: SidebarMenu = {
         },
       ],
     },
+    {
+      title: "Data Movements",
+      icon: Package,
+      href: "/dashboard/admin/movements",
+    }
   ],
   operator: [],
 };
