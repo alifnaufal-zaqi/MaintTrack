@@ -1,5 +1,10 @@
-import { AssetsVendors } from "./_ui/vendor"
+import { Metadata } from "next";
+import { Vendors } from "./_ui/vendor";
+
+export const metadata: Metadata = {
+  title: "MaintTrack | Vendor",
+};
 
 export default function VendorPage() {
-    return <AssetsVendors/>
+  return <Vendors />;
 }

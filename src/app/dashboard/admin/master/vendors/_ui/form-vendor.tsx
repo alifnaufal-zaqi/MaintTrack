@@ -2,160 +2,103 @@
 
 import { Button } from "@/components/ui/button";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
-import {
-  Field,
-  FieldGroup,
-  FieldLabel,
-  FieldSet,
-} from "@/components/ui/field";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
 import { Input } from "@/components/ui/input";
 
 import Link from "next/link";
 
+import { UploadCloud } from "lucide-react";
+
 export function FormVendor() {
   return (
-    <Card className="w-full">
+    <div className="w-full space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold">Tambah Vendor Baru</h1>
 
-      {/* HEADER */}
-      <CardHeader>
+        <p className="text-sm text-muted-foreground mt-1">
+          Beranda &gt; Vendor &gt; Tambah Vendor
+        </p>
+      </div>
 
-        <CardTitle>
-          Form Pembuatan Vendor
-        </CardTitle>
+      <Card className="w-full">
+        <form>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              <div className="lg:col-span-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Nama Vendor</label>
 
-        <CardDescription>
-          Tambahkan data vendor asset disini
-        </CardDescription>
+                    <Input placeholder="Masukkan nama vendor" />
+                  </div>
 
-      </CardHeader>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Email</label>
 
-      {/* FORM */}
-      <form action="">
+                    <Input type="email" placeholder="Masukkan email vendor" />
+                  </div>
 
-        <CardContent>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Nomor Kontak</label>
 
-          <FieldSet>
+                    <Input placeholder="Masukkan nomor kontak vendor" />
+                  </div>
 
-            <FieldGroup>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Alamat</label>
 
-              {/* LOGO */}
-              <Field>
+                    <Input placeholder="Masukkan alamat vendor" />
+                  </div>
+                </div>
+              </div>
 
-                <FieldLabel htmlFor="logo">
-                  Logo Vendor
-                </FieldLabel>
+              <div className="border rounded-lg p-5 h-fit">
+                <h3 className="font-medium text-center mb-4">Foto Logo</h3>
 
-                <Input
-                  type="file"
-                  id="logo"
-                  name="logo"
-                />
+                <label
+                  className="
+                    border-2
+                    border-dashed
+                    rounded-lg
+                    p-8
+                    flex
+                    flex-col
+                    items-center
+                    justify-center
+                    cursor-pointer
+                    text-center
+                  "
+                >
+                  <UploadCloud className="h-10 w-10 text-muted-foreground" />
 
-              </Field>
+                  <span className="font-medium mt-2">Unggah Logo Vendor</span>
 
-              {/* NAME */}
-              <Field>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Tarik dan lepas file di sini atau klik untuk memilih file
+                  </p>
 
-                <FieldLabel htmlFor="name">
-                  Nama Vendor
-                </FieldLabel>
+                  <p className="text-xs text-muted-foreground mt-4">
+                    PNG, JPG hingga 10MB
+                  </p>
 
-                <Input
-                  type="text"
-                  id="name"
-                  name="name"
-                  placeholder="Masukan nama vendor"
-                />
+                  <Input type="file" className="hidden" />
+                </label>
+              </div>
+            </div>
+          </CardContent>
 
-              </Field>
+          <CardFooter className="flex justify-end gap-3 border-t p-6">
+            <Link href="/dashboard/admin/master/vendors">
+              <Button type="button" variant="outline">
+                Batal
+              </Button>
+            </Link>
 
-              {/* EMAIL */}
-              <Field>
-
-                <FieldLabel htmlFor="email">
-                  Email Vendor
-                </FieldLabel>
-
-                <Input
-                  type="email"
-                  id="email"
-                  name="email"
-                  placeholder="Masukan email vendor"
-                />
-
-              </Field>
-
-              {/* CONTACT */}
-              <Field>
-
-                <FieldLabel htmlFor="contact">
-                  Kontak Vendor
-                </FieldLabel>
-
-                <Input
-                  type="text"
-                  id="contact"
-                  name="contact"
-                  placeholder="Masukan nomor kontak vendor"
-                />
-
-              </Field>
-
-              {/* ADDRESS */}
-              <Field>
-
-                <FieldLabel htmlFor="address">
-                  Alamat Vendor
-                </FieldLabel>
-
-                <Input
-                  type="text"
-                  id="address"
-                  name="address"
-                  placeholder="Masukan alamat vendor"
-                />
-
-              </Field>
-
-            </FieldGroup>
-
-          </FieldSet>
-
-        </CardContent>
-
-        {/* FOOTER */}
-        <CardFooter className="flex gap-2 justify-end mt-4">
-
-          <Link href={"/dashboard/admin/master/vendors"}>
-
-            <Button
-              type="button"
-              variant={"outline"}
-              className="text-primary"
-            >
-              Kembali
-            </Button>
-
-          </Link>
-
-          <Button type="submit">
-            Simpan
-          </Button>
-
-        </CardFooter>
-
-      </form>
-
-    </Card>
+            <Button type="submit">Simpan</Button>
+          </CardFooter>
+        </form>
+      </Card>
+    </div>
   );
 }

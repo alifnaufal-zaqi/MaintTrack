@@ -1,7 +1,9 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
+
 import { Input } from "@/components/ui/input";
+
 import { Spinner } from "@/components/ui/spinner";
 
 import {
@@ -13,8 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import usePagination from "@/hooks/use-pagination";
-import useSearch from "@/hooks/use-search";
+import { Badge } from "@/components/ui/badge";
 
 import { createClient } from "@/lib/client";
 
@@ -22,61 +23,50 @@ import { useQuery } from "@tanstack/react-query";
 
 import { ChangeEvent } from "react";
 
+import usePagination from "@/hooks/use-pagination";
+import useSearch from "@/hooks/use-search";
+
 import { toast } from "sonner";
 
 const MAINTENANCE_TABLE_HEADER = [
-  "Nama Aset",
-  "Teknisi",
-  "Jenis Perawatan",
-  "Jadwal",
-  "Tenggat Waktu",
-  "Biaya",
+  "Nama Asset",
+  "Tanggal",
+  "Vendor",
   "Status",
+  "Petugas",
+  "Keterangan",
 ];
 
-type Maintenance = {
+type MaintenanceType = {
   id: string;
+  asset_name: string;
   maintenance_date: string;
-  maintenance_type: string;
-  cost: number;
-  notes: string;
+  vendor_name: string;
   status: string;
-
-  assets: {
-    name: string;
-  };
-
-  user_profiles: {
-    fullname: string;
-  };
+  technician: string;
+  description: string;
 };
 
-export function AssetsMaintenance() {
+export function Maintenance() {
   const supabase = createClient();
 
   const { page, limit } = usePagination();
 
   const { keyword, handleKeywordChange } = useSearch();
 
-  const { data: maintenances, isLoading } = useQuery<
-    Maintenance[] | null
-  >({
+  const { data: maintenances, isLoading } = useQuery<MaintenanceType[] | null>({
     queryKey: ["maintenances", page, limit, keyword],
 
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("maintenance_logs")
-        .select(`
-          *,
-          assets(name),
-          user_profiles(fullname)
-        `)
+        .from("maintenances")
+        .select("*")
         .range((page - 1) * limit, page * limit - 1)
-        .order("maintenance_date")
-        .ilike("notes", `%${keyword}%`);
+        .order("created_at")
+        .ilike("asset_name", `%${keyword}%`);
 
       if (error) {
-        toast.error("Gagal Memuat Data", {
+        toast.error("Gagal", {
           description: error.message,
         });
       }
@@ -87,171 +77,110 @@ export function AssetsMaintenance() {
 
   return (
     <div className="w-full space-y-4">
-
       {/* TITLE */}
-      <h1 className="text-xl font-bold text-primary">
-        Administrasi Perawatan
-      </h1>
+      <h1 className="text-xl font-bold text-primary">Manajemen Maintenance</h1>
 
       {/* SEARCH */}
       <Card className="p-2">
-
         <Input
           type="search"
-          placeholder="Cari log perawatan..."
+          placeholder="Cari data maintenance..."
           onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleKeywordChange(event.target.value)
           }
         />
-
       </Card>
 
       {/* TABLE */}
       <Card className="p-0 overflow-hidden">
-
         <Table className="w-full">
-
           {/* HEADER */}
           <TableHeader className="bg-muted">
-
             <TableRow>
-
               {MAINTENANCE_TABLE_HEADER.map((head) => (
-                <TableHead
-                  key={head}
-                  className="px-6 py-4 font-semibold"
-                >
+                <TableHead key={head} className="px-6 py-4">
                   {head}
                 </TableHead>
               ))}
-
             </TableRow>
-
           </TableHeader>
 
           {/* BODY */}
           <TableBody>
-
             {maintenances?.map((maintenance) => (
-
               <TableRow key={maintenance.id}>
-
-                {/* NAMA ASET */}
-                <TableCell className="px-6 py-5">
-
-                  {maintenance.assets?.name}
-
+                {/* ASSET */}
+                <TableCell className="px-6 py-4">
+                  {maintenance.asset_name}
                 </TableCell>
 
-                {/* TEKNISI */}
-                <TableCell className="px-6 py-5">
-
-                  {maintenance.user_profiles?.fullname}
-
-                </TableCell>
-
-                {/* JENIS */}
-                <TableCell className="px-6 py-5">
-
-                  {maintenance.maintenance_type}
-
-                </TableCell>
-
-                {/* JADWAL */}
-                <TableCell className="px-6 py-5">
-
+                {/* DATE */}
+                <TableCell className="px-6 py-4">
                   {maintenance.maintenance_date}
-
                 </TableCell>
 
-                {/* TENGGAT */}
-                <TableCell className="px-6 py-5 text-red-500">
-
-                  {maintenance.maintenance_date}
-
-                </TableCell>
-
-                {/* BIAYA */}
-                <TableCell className="px-6 py-5">
-
-                  Rp.
-                  {maintenance.cost.toLocaleString("id-ID")}
-
+                {/* VENDOR */}
+                <TableCell className="px-6 py-4">
+                  {maintenance.vendor_name}
                 </TableCell>
 
                 {/* STATUS */}
-                <TableCell className="px-6 py-5">
-
-                  <div
-                    className={`
-                      px-4 py-2 rounded-full text-center text-sm font-medium w-fit
-
-                      ${
-                        maintenance.status === "Selesai"
-                          ? "bg-green-100 text-green-600"
-                          : maintenance.status === "Proses"
-                          ? "bg-blue-100 text-blue-600"
-                          : "bg-red-100 text-red-600"
-                      }
-                    `}
+                <TableCell className="px-6 py-4">
+                  <Badge
+                    variant={
+                      maintenance.status === "Selesai"
+                        ? "default"
+                        : maintenance.status === "Diproses"
+                          ? "secondary"
+                          : "outline"
+                    }
                   >
-
                     {maintenance.status}
-
-                  </div>
-
+                  </Badge>
                 </TableCell>
 
-              </TableRow>
+                {/* PETUGAS */}
+                <TableCell className="px-6 py-4">
+                  {maintenance.technician}
+                </TableCell>
 
+                {/* DESCRIPTION */}
+                <TableCell className="px-6 py-4">
+                  {maintenance.description}
+                </TableCell>
+              </TableRow>
             ))}
 
             {/* EMPTY */}
             {maintenances?.length === 0 && !isLoading && (
-
               <TableRow>
-
                 <TableCell
                   colSpan={MAINTENANCE_TABLE_HEADER.length}
                   className="h-24 text-center"
                 >
-                  Data perawatan belum tersedia
+                  Data maintenance belum tersedia
                 </TableCell>
-
               </TableRow>
-
             )}
 
             {/* LOADING */}
             {isLoading && (
-
               <TableRow>
-
                 <TableCell
                   colSpan={MAINTENANCE_TABLE_HEADER.length}
                   className="h-24"
                 >
-
                   <div className="flex flex-col justify-center items-center gap-2">
-
                     <Spinner />
 
-                    <span>Memuat data perawatan...</span>
-
+                    <span>Memuat data maintenance...</span>
                   </div>
-
                 </TableCell>
-
               </TableRow>
-
             )}
-
           </TableBody>
-
         </Table>
-
       </Card>
-
     </div>
   );
 }
