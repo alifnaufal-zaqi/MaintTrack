@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { Location } from "./_ui/location";
+import { Location } from "./_ui/locations";
 
 export const metadata: Metadata = {
   title: "MaintTrack | Lokasi",
