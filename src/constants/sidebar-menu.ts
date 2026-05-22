@@ -6,7 +6,8 @@ import {
   MapPin,
   Handshake,
   Tag,
-  Package,
+  Wrench,
+  Repeat,
   FileBarChart,
 } from "lucide-react";
 
@@ -62,9 +63,16 @@ export const SIDEBAR_MENU: SidebarMenu = {
         },
       ],
     },
+
     {
-      title: "Data Movements",
-      icon: Package,
+      title: "Data Maintenance",
+      icon: Wrench,
+      href: "/dashboard/admin/maintenance",
+    },
+
+    {
+      title: "Data Movement",
+      icon: Repeat,
       href: "/dashboard/admin/movements",
     },
 
@@ -80,5 +88,36 @@ export const SIDEBAR_MENU: SidebarMenu = {
     },
   ],
 
-  operator: [],
+  // Operator Menu
+  operator: [
+     {
+      title: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/dashboard/operator",
+    },
+
+    {
+      title: "Data Aset",
+      icon: Laptop,
+      href: "/dashboard/operator/assets",
+    },
+
+    {
+      title: "Data Maintenance",
+      icon: Wrench,
+      href: "/dashboard/operator/maintenance",
+    },
+    
+    {
+      title: "Data Movement",
+      icon: Repeat,
+      href: "/dashboard/operator/movements",
+    },
+
+    {
+      title: "History",
+      icon: history,
+      href: "/dashboard/operator/history",
+    }
+  ],
 };
