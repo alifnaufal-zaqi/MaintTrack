@@ -1,1 +1,1 @@
-export const MOVEMENTS_TABLE_HEADER = ["no", "asset", "lokasi asal", "lokasi tujuan", "tanggal", "pic", "catatan"];
+export const MOVEMENTS_TABLE_HEADER = ["no", "asset", "lokasi asal", "lokasi tujuan", "tanggal", "PIC", "catatan"];

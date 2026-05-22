@@ -3,7 +3,18 @@
 import { ActionButton } from "@/components/commons/action-button";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
@@ -21,7 +32,7 @@ import { Location as LocationType } from "@/types/locations";
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { ChangeEvent } from "react";
+import { ChangeEvent, useState } from "react";
 import { toast } from "sonner";
 
 export function Location() {
@@ -47,7 +58,14 @@ export function Location() {
         return data;
       },
     });
-  
+   const [dialogOpen, setDialogOpen] = useState<{
+      update: boolean;
+      delete: boolean;
+    }>({ update: false, delete: false });
+    const [selectedCategory, setSelectedCategory] = useState<LocationType | null>(
+      null
+    );
+
   return (
     <div className="w-full space-y-4">
       <h1 className="text-xl text-primary font-bold">
@@ -89,7 +107,18 @@ export function Location() {
                 <TableCell className="px-6 py-3">{location.type}</TableCell>
                 <TableCell className="px-6 py-3">{location.description}</TableCell>
                 <TableCell className="px-6 py-3">
-                  <ActionButton isDelete isUpdate />
+                  <ActionButton 
+                    isDelete 
+                    isUpdate 
+                    onUpdateClick={() => {
+                      setSelectedCategory(location);
+                      setDialogOpen((prev) => ({ ...prev, update: true }));
+                    }}
+                    onDeleteClick={() => {
+                      setSelectedCategory(location);
+                      setDialogOpen((prev) => ({ ...prev, delete: true }));
+                    }}
+                  />
                 </TableCell>
               </TableRow>                                
             ))}
@@ -119,6 +148,92 @@ export function Location() {
           </TableBody>
         </Table>
       </Card>
+
+ {/* Dialog Delete */}
+      <Dialog
+        open={dialogOpen.delete}
+        onOpenChange={(value) =>
+          setDialogOpen((prev) => ({ ...prev, delete: value }))
+        }
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Peringatan</DialogTitle>
+            <DialogDescription>
+              Apakah anda yakin ingin menghapus lokasi ini?
+            </DialogDescription>
+            <DialogFooter>
+              <DialogClose>
+                <Button variant={"outline"}>Batal</Button>
+              </DialogClose>
+              <Button variant={"destructive"}>Ya</Button>
+            </DialogFooter>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Edit */}
+      {selectedCategory && (
+        <Dialog
+          open={dialogOpen.update}
+          onOpenChange={(value) =>
+            setDialogOpen((prev) => ({ ...prev, update: value }))
+          }
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Form Edit Lokasi</DialogTitle>
+              <DialogDescription>
+                Edit Lokasi anda Disini
+              </DialogDescription>
+            </DialogHeader>
+            <form action="">
+              <FieldSet>
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="name">Nama Lokasi</FieldLabel>
+                    <Input
+                      type="text"
+                      id="name"
+                      name="name"
+                      placeholder="Masukan nama lokasi"
+                      defaultValue={selectedCategory.name}
+                    /> 
+                    </Field>                   
+                    <Field>
+                      <FieldLabel htmlFor="type">Tipe Lokasi</FieldLabel>
+                      <Select id="type" name="type" defaultValue="">
+                        <option value="" disabled>
+                          Pilih tipe lokasi
+                        </option>
+                        <option value="ruangan">Ruangan</option>
+                        <option value="kantor">Kantor</option>
+                        <option value="gedung">Gedung</option>
+                      </Select>
+                    </Field>
+                  <Field>
+                  <FieldLabel htmlFor="description">Deskripsi Lokasi</FieldLabel>
+                    <Input
+                      type="text"
+                      id="description"
+                      name="description"
+                      placeholder="Masukan deskripsi lokasi"
+                      defaultValue={selectedCategory.description}
+                    />
+                  </Field>
+                </FieldGroup>
+              </FieldSet>
+              <DialogFooter className="mt-4">
+                <DialogClose>
+                  <Button variant={"outline"}>Batal</Button>
+                </DialogClose>
+                <Button>Edit</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
+
     </div>
   );
 }
