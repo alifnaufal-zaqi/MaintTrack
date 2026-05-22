@@ -1,19 +1,26 @@
 import {
-  Database,
-  Handshake,
-  Laptop,
   LayoutDashboard,
+  Database,
+  Users,
+  Laptop,
   MapPin,
+  Handshake,
   Tag,
   Package,
+  FileBarChart,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+
+type SidebarSubMenuItem = {
+  title: string;
+  icon: any;
+  href: string;
+};
 
 type SidebarMenuItem = {
   title: string;
-  icon: LucideIcon;
+  icon: any;
   href?: string;
-  sub?: SidebarMenuItem[];
+  sub?: SidebarSubMenuItem[];
 };
 
 type SidebarMenu = {
@@ -28,6 +35,7 @@ export const SIDEBAR_MENU: SidebarMenu = {
       icon: LayoutDashboard,
       href: "/dashboard/admin",
     },
+
     {
       title: "Data Master",
       icon: Database,
@@ -58,7 +66,19 @@ export const SIDEBAR_MENU: SidebarMenu = {
       title: "Data Movements",
       icon: Package,
       href: "/dashboard/admin/movements",
-    }
+    },
+
+    {
+      title: "Pengguna",
+      icon: Users,
+      href: "/dashboard/admin/users",
+    },
+    {
+      title: "Laporan",
+      icon: FileBarChart,
+      href: "/dashboard/admin/reports",
+    },
   ],
+
   operator: [],
 };

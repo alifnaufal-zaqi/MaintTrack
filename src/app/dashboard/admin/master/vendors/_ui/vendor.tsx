@@ -1,6 +1,5 @@
 "use client";
 
-import { ActionButton } from "@/components/commons/action-button";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,18 +14,25 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import usePagination from "@/hooks/use-pagination";
-import useSearch from "@/hooks/use-search";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { createClient } from "@/lib/client";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { Plus } from "lucide-react";
+import { ChangeEvent } from "react";
 
 import Link from "next/link";
 
-import { ChangeEvent } from "react";
+import usePagination from "@/hooks/use-pagination";
+import useSearch from "@/hooks/use-search";
+
+import { Plus, MoreVertical } from "lucide-react";
 
 import { toast } from "sonner";
 
@@ -34,7 +40,7 @@ const VENDORS_TABLE_HEADER = [
   "Logo",
   "Nama Vendor",
   "Email",
-  "Nomor Telepon",
+  "Kontak",
   "Alamat",
   "Aksi",
 ];
@@ -48,7 +54,7 @@ type Vendor = {
   logo_url: string;
 };
 
-export function AssetsVendors() {
+export function Vendors() {
   const supabase = createClient();
 
   const { page, limit } = usePagination();
@@ -67,7 +73,7 @@ export function AssetsVendors() {
         .ilike("name", `%${keyword}%`);
 
       if (error) {
-        toast.error("Gagal Memuat Data", {
+        toast.error("Gagal", {
           description: error.message,
         });
       }
@@ -78,15 +84,11 @@ export function AssetsVendors() {
 
   return (
     <div className="w-full space-y-4">
-
       {/* TITLE */}
-      <h1 className="text-xl font-bold text-primary">
-        Manajemen Data Vendor
-      </h1>
+      <h1 className="text-xl font-bold text-primary">Manajemen Vendor</h1>
 
-      {/* SEARCH + BUTTON */}
+      {/* SEARCH */}
       <Card className="p-2 flex flex-row gap-2 items-center">
-
         <Input
           type="search"
           placeholder="Cari data vendor..."
@@ -95,131 +97,112 @@ export function AssetsVendors() {
           }
         />
 
-        <Link href={"/dashboard/admin/master/vendors/create"}>
+        <Link href="/dashboard/admin/master/vendors/create">
           <Button>
             <Plus className="w-4 h-4 mr-1" />
             Tambah Vendor
           </Button>
         </Link>
-
       </Card>
 
       {/* TABLE */}
       <Card className="p-0 overflow-hidden">
-
         <Table className="w-full">
-
           {/* HEADER */}
           <TableHeader className="bg-muted">
-
             <TableRow>
-
               {VENDORS_TABLE_HEADER.map((head) => (
-                <TableHead
-                  key={head}
-                  className="px-6 py-3 font-semibold"
-                >
+                <TableHead key={head} className="px-6 py-4">
                   {head}
                 </TableHead>
               ))}
-
             </TableRow>
-
           </TableHeader>
 
           {/* BODY */}
           <TableBody>
-
             {vendors?.map((vendor) => (
-
               <TableRow key={vendor.id}>
-
                 {/* LOGO */}
-                <TableCell className="px-6 py-3">
-
+                <TableCell className="px-6 py-4">
                   <img
                     src={vendor.logo_url}
                     alt={vendor.name}
-                    className="w-12 h-12 rounded-md object-cover border"
+                    className="
+                      w-12
+                      h-12
+                      rounded-md
+                      object-cover
+                      border
+                    "
                   />
-
                 </TableCell>
 
                 {/* NAME */}
-                <TableCell className="px-6 py-3">
-                  {vendor.name}
-                </TableCell>
+                <TableCell className="px-6 py-4">{vendor.name}</TableCell>
 
                 {/* EMAIL */}
-                <TableCell className="px-6 py-3">
-                  {vendor.email}
-                </TableCell>
+                <TableCell className="px-6 py-4">{vendor.email}</TableCell>
 
                 {/* PHONE */}
-                <TableCell className="px-6 py-3">
+                <TableCell className="px-6 py-4">
                   {vendor.phone_number}
                 </TableCell>
 
                 {/* ADDRESS */}
-                <TableCell className="px-6 py-3">
-                  {vendor.address}
-                </TableCell>
+                <TableCell className="px-6 py-4">{vendor.address}</TableCell>
 
                 {/* ACTION */}
-                <TableCell className="px-6 py-3">
-                  <ActionButton isDelete isUpdate />
+                <TableCell className="px-6 py-4">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" variant="ghost">
+                        <MoreVertical className="w-5 h-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem>Edit</DropdownMenuItem>
+
+                      <DropdownMenuItem className="text-red-500">
+                        Hapus
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
-
               </TableRow>
-
             ))}
 
             {/* EMPTY */}
             {vendors?.length === 0 && !isLoading && (
-
               <TableRow>
-
                 <TableCell
                   colSpan={VENDORS_TABLE_HEADER.length}
                   className="h-24 text-center"
                 >
                   Data vendor belum tersedia
                 </TableCell>
-
               </TableRow>
-
             )}
 
             {/* LOADING */}
             {isLoading && (
-
               <TableRow>
-
                 <TableCell
                   colSpan={VENDORS_TABLE_HEADER.length}
                   className="h-24"
                 >
-
                   <div className="flex flex-col justify-center items-center gap-2">
-
                     <Spinner />
 
                     <span>Memuat data vendor...</span>
-
                   </div>
-
                 </TableCell>
-
               </TableRow>
-
             )}
-
           </TableBody>
-
         </Table>
-
       </Card>
-
     </div>
   );
 }

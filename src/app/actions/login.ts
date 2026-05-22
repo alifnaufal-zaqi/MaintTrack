@@ -6,12 +6,9 @@ import { createClient } from "@/lib/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
-import * as z from "zod";
+import { AuthError } from "@/types/auth";
 
-export async function login(
-  state: FormState<z.infer<typeof LoginSchema>>,
-  formData: FormData
-) {
+export async function login(state: FormState<AuthError>, formData: FormData) {
   const validatedFields = LoginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
