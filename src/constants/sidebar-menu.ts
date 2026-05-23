@@ -1,3 +1,4 @@
+import { Maintenance } from "@/app/dashboard/admin/maintenance/_ui/maintenance";
 import {
   LayoutDashboard,
   Database,
@@ -7,6 +8,7 @@ import {
   Handshake,
   Tag,
   FileBarChart,
+  Wrench,
 } from "lucide-react";
 
 type SidebarSubMenuItem = {
@@ -66,6 +68,12 @@ export const SIDEBAR_MENU: SidebarMenu = {
       title: "Pengguna",
       icon: Users,
       href: "/dashboard/admin/users",
+    },
+
+    {
+      title: "Perawatan",
+      icon: Wrench,
+      href: "/dashboard/admin/maintenance",
     },
 
     // MENU BARU

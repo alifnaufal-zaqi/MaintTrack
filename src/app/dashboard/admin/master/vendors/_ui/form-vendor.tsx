@@ -15,10 +15,6 @@ export function FormVendor() {
     <div className="w-full space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Tambah Vendor Baru</h1>
-
-        <p className="text-sm text-muted-foreground mt-1">
-          Beranda &gt; Vendor &gt; Tambah Vendor
-        </p>
       </div>
 
       <Card className="w-full">

@@ -21,11 +21,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
+
 import { createClient } from "@/lib/client";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { ChangeEvent } from "react";
+import { ChangeEvent, useState } from "react";
 
 import Link from "next/link";
 
@@ -60,6 +72,13 @@ export function Vendors() {
   const { page, limit } = usePagination();
 
   const { keyword, handleKeywordChange } = useSearch();
+
+  const [dialogOpen, setDialogOpen] = useState({
+    update: false,
+    delete: false,
+  });
+
+  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
 
   const { data: vendors, isLoading } = useQuery<Vendor[] | null>({
     queryKey: ["vendors", page, limit, keyword],
@@ -162,9 +181,32 @@ export function Vendors() {
                     </DropdownMenuTrigger>
 
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>Edit</DropdownMenuItem>
+                      {/* EDIT */}
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setSelectedVendor(vendor);
 
-                      <DropdownMenuItem className="text-red-500">
+                          setDialogOpen((prev) => ({
+                            ...prev,
+                            update: true,
+                          }));
+                        }}
+                      >
+                        Edit
+                      </DropdownMenuItem>
+
+                      {/* DELETE */}
+                      <DropdownMenuItem
+                        className="text-red-500"
+                        onClick={() => {
+                          setSelectedVendor(vendor);
+
+                          setDialogOpen((prev) => ({
+                            ...prev,
+                            delete: true,
+                          }));
+                        }}
+                      >
                         Hapus
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -203,6 +245,105 @@ export function Vendors() {
           </TableBody>
         </Table>
       </Card>
+
+      {/* DIALOG DELETE */}
+      <Dialog
+        open={dialogOpen.delete}
+        onOpenChange={(value) =>
+          setDialogOpen((prev) => ({
+            ...prev,
+            delete: value,
+          }))
+        }
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Hapus Vendor</DialogTitle>
+
+            <DialogDescription>
+              Apakah anda yakin ingin menghapus vendor ini?
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <DialogClose>
+              <Button variant="outline">Batal</Button>
+            </DialogClose>
+
+            <Button variant="destructive">Hapus</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG EDIT */}
+      {selectedVendor && (
+        <Dialog
+          open={dialogOpen.update}
+          onOpenChange={(value) =>
+            setDialogOpen((prev) => ({
+              ...prev,
+              update: value,
+            }))
+          }
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Vendor</DialogTitle>
+
+              <DialogDescription>Edit data vendor disini</DialogDescription>
+            </DialogHeader>
+
+            <form>
+              <FieldSet>
+                <FieldGroup>
+                  {/* NAMA */}
+                  <Field>
+                    <FieldLabel>Nama Vendor</FieldLabel>
+
+                    <Input defaultValue={selectedVendor.name} />
+                  </Field>
+
+                  {/* EMAIL */}
+                  <Field>
+                    <FieldLabel>Email</FieldLabel>
+
+                    <Input defaultValue={selectedVendor.email} />
+                  </Field>
+
+                  {/* PHONE */}
+                  <Field>
+                    <FieldLabel>Nomor Kontak</FieldLabel>
+
+                    <Input defaultValue={selectedVendor.phone_number} />
+                  </Field>
+
+                  {/* ADDRESS */}
+                  <Field>
+                    <FieldLabel>Alamat</FieldLabel>
+
+                    <Input defaultValue={selectedVendor.address} />
+                  </Field>
+
+                  {/* LOGO */}
+                  <Field>
+                    <FieldLabel>Logo Vendor</FieldLabel>
+
+                    <Input type="file" />
+                  </Field>
+                </FieldGroup>
+              </FieldSet>
+
+              <DialogFooter className="mt-4">
+                <DialogClose>
+                  <Button variant="outline">Batal</Button>
+                </DialogClose>
+
+                <Button>Simpan</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
