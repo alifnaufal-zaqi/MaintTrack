@@ -339,7 +339,13 @@ export function Location() {
               <DialogClose>
                 <Button variant={"outline"}>Batal</Button>
               </DialogClose>
-              <Button variant={"destructive"}>Ya</Button>
+              <Button
+                variant={"destructive"}
+                disabled={loadingDelete}
+                onClick={() => mutationDelete(selectedLocation!.id)}
+              >
+                {loadingDelete ? <Spinner /> : "Ya"}
+              </Button>
             </DialogFooter>
           </DialogHeader>
         </DialogContent>
@@ -358,41 +364,60 @@ export function Location() {
               <DialogTitle>Form Edit Lokasi</DialogTitle>
               <DialogDescription>Edit Lokasi anda Disini</DialogDescription>
             </DialogHeader>
-            <form action="">
+            <form onSubmit={handleSubmit}>
               <FieldSet>
                 <FieldGroup>
-                  <Field>
+                  <Field data-invalid={Boolean(formError?.name)}>
                     <FieldLabel htmlFor="name">Nama Lokasi</FieldLabel>
                     <Input
+                      aria-invalid={Boolean(formError?.name)}
+                      defaultValue={selectedLocation!.name}
                       type="text"
                       id="name"
                       name="name"
-                      placeholder="Masukan nama lokasi"
-                      defaultValue={selectedLocation.name}
+                      placeholder="Masukan nama kategori aset"
                     />
+                    {formError?.name && (
+                      <FieldError>{formError.name[0]}</FieldError>
+                    )}
                   </Field>
-                  <Field>
+                  <Field data-invalid={Boolean(formError?.type)}>
                     <FieldLabel htmlFor="type">Tipe Lokasi</FieldLabel>
-                    <Select name="type" defaultValue={selectedLocation.type}>
-                      <option value="" disabled>
-                        Pilih tipe lokasi
-                      </option>
-                      <option value="ruangan">Ruangan</option>
-                      <option value="kantor">Kantor</option>
-                      <option value="gedung">Gedung</option>
+                    <Select name="type" defaultValue={selectedLocation!.type}>
+                      <SelectTrigger aria-invalid={Boolean(formError?.type)}>
+                        <SelectValue
+                          id="type"
+                          placeholder="Pilih tipe ruangan"
+                        />
+                      </SelectTrigger>
+                      <SelectContent position="popper">
+                        {locationTypeSelect.map((type, index) => (
+                          <SelectItem
+                            key={`${type}-${index}`}
+                            value={type}
+                            className="capitalize"
+                          >
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
                     </Select>
+                    {formError?.type && (
+                      <FieldError>{formError.type}</FieldError>
+                    )}
                   </Field>
-                  <Field>
-                    <FieldLabel htmlFor="description">
-                      Deskripsi Lokasi
-                    </FieldLabel>
-                    <Input
-                      type="text"
+                  <Field data-invalid={Boolean(formError?.description)}>
+                    <FieldLabel htmlFor="description">Deskripsi</FieldLabel>
+                    <Textarea
+                      aria-invalid={Boolean(formError?.description)}
+                      defaultValue={selectedLocation!.description}
                       id="description"
                       name="description"
                       placeholder="Masukan deskripsi lokasi"
-                      defaultValue={selectedLocation.description}
                     />
+                    {formError?.description && (
+                      <FieldError>{formError.description}</FieldError>
+                    )}
                   </Field>
                 </FieldGroup>
               </FieldSet>
@@ -400,7 +425,9 @@ export function Location() {
                 <DialogClose>
                   <Button variant={"outline"}>Batal</Button>
                 </DialogClose>
-                <Button>Edit</Button>
+                <Button type="submit" disabled={loadingUpdate}>
+                  {loadingUpdate ? <Spinner /> : "Edit"}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
