@@ -6,9 +6,9 @@ import {
   MapPin,
   Handshake,
   Tag,
-  Wrench,
   Repeat,
   FileBarChart,
+  Wrench,
 } from "lucide-react";
 
 type SidebarSubMenuItem = {
@@ -90,7 +90,7 @@ export const SIDEBAR_MENU: SidebarMenu = {
 
   // Operator Menu
   operator: [
-     {
+    {
       title: "Dashboard",
       icon: LayoutDashboard,
       href: "/dashboard/operator",
@@ -107,7 +107,7 @@ export const SIDEBAR_MENU: SidebarMenu = {
       icon: Wrench,
       href: "/dashboard/operator/maintenance",
     },
-    
+
     {
       title: "Data Movement",
       icon: Repeat,
@@ -118,6 +118,6 @@ export const SIDEBAR_MENU: SidebarMenu = {
       title: "History",
       icon: history,
       href: "/dashboard/operator/history",
-    }
+    },
   ],
 };

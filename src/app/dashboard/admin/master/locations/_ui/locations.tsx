@@ -12,21 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-  FieldSet,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
@@ -36,128 +24,53 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
-import { locationTypeSelect } from "@/constants/location-type";
 import { LOCATIONS_TABLE_HEADER } from "@/constants/locations-constant";
 import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
 import { createClient } from "@/lib/client";
-import { LocationSchema } from "@/schemas/location";
-import { DialogState } from "@/types/dialog-state";
-import { FormLocation, Location as LocationType } from "@/types/locations";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Location as LocationType } from "@/types/locations";
+import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { ChangeEvent, SubmitEvent, useState } from "react";
+import { ChangeEvent, useState } from "react";
 import { toast } from "sonner";
 
 export function Location() {
   const supabase = createClient();
-  const queryClient = useQueryClient();
-  const { page, limit, handleLimitChange, handlePageChange } = usePagination();
-  const [selectedLocation, setSelectedLocation] = useState<LocationType | null>(
-    null
-  );
-  const [dialogState, setDialogState] = useState<DialogState>({
-    update: false,
-    delete: false,
-  });
-  const [formError, setFormError] = useState<FormLocation | null>(null);
-  const { keyword, handleKeywordChange } = useSearch();
-  const { data: locations, isLoading } = useQuery<LocationType[] | null>({
-    queryKey: ["locations", page, limit, keyword],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("locations")
-        .select("*")
-        .range((page - 1) * limit, page * limit - 1)
-        .order("created_at")
-        .ilike("name", `%${keyword}%`);
-
-      if (error) {
-        toast.error("Gagal", {
-          description: error.message,
-        });
-      }
-
-      return data;
-    },
-  });
-  const { mutate: mutationDelete, isPending: loadingDelete } = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("locations").delete().eq("id", id);
-
-      if (error) {
-        throw error;
-      }
-    },
-    onError: (error) => {
-      toast.error("Gagal", { description: error.message });
-    },
-    onSuccess: () => {
-      setDialogState((prev) => ({ ...prev, delete: false }));
-      queryClient.invalidateQueries({
-        queryKey: ["locations"],
-      });
-      toast.success("Berhasil", {
-        description: "Berhasil menghapus data lokasi",
-      });
-    },
-  });
-  const { mutate: mutationUpdate, isPending: loadingUpdate } = useMutation({
-    mutationFn: async (location: Omit<LocationType, "created_at">) => {
-      const { error } = await supabase
-        .from("locations")
-        .update({
-          name: location.name,
-          description: location.description,
-          type: location.type,
-        })
-        .eq("id", location.id);
-
-      if (error) {
-        throw error;
-      }
-    },
-    onError: (error) => {
-      toast.error("Gagal", { description: error.message });
-    },
-    onSuccess: () => {
-      setDialogState((prev) => ({ ...prev, update: false }));
-      queryClient.invalidateQueries({
-        queryKey: ["locations"],
-      });
-      toast.success("Berhasil", {
-        description: "Berhasil mengupdate data lokasi",
-      });
-    },
-  });
-
-  const handleSubmit = (
-    event: SubmitEvent<HTMLFormElement>,
-    location: Omit<LocationType, "created_at">
-  ) => {
-    event.preventDefault();
-    const formData = new FormData(event.target);
-
-    const validatedField = LocationSchema.safeParse({
-      name: formData.get("name"),
-      type: formData.get("type"),
-      description: formData.get("description"),
+    const { page, limit, handleLimitChange, handlePageChange } = usePagination();
+    const { keyword, handleKeywordChange } = useSearch();
+    const { data: locations, isLoading } = useQuery<LocationType[] | null>({
+      queryKey: ["locations", page, limit, keyword],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from("locations")
+          .select("*")
+          .range((page - 1) * limit, page * limit - 1)
+          .order("created_at")
+          .ilike("name", `%${keyword}%`);
+  
+        if (error) {
+          toast.error("Gagal", {
+            description: error.message,
+          });
+        }
+  
+        return data;
+      },
     });
-
-    if (!validatedField.success) {
-      setFormError(validatedField.error.flatten().fieldErrors);
-      return;
-    }
-
-    setFormError(null);
-    mutationUpdate(location);
-  };
+   const [dialogOpen, setDialogOpen] = useState<{
+      update: boolean;
+      delete: boolean;
+    }>({ update: false, delete: false });
+    const [selectedLocation, setSelectedLocation] = useState<LocationType | null>(
+      null
+    );
 
   return (
     <div className="w-full space-y-4">
-      <h1 className="text-xl text-primary font-bold">Manajemen Data Lokasi</h1>
+      <h1 className="text-xl text-primary font-bold">
+        Manajemen Data Lokasi
+      </h1>
 
       <Card className="p-2 flex flex-row gap-2 items-center">
         <Input
@@ -191,27 +104,23 @@ export function Location() {
               <TableRow key={location.id}>
                 <TableCell className="px-6 py-3">{index + 1}</TableCell>
                 <TableCell className="px-6 py-3">{location.name}</TableCell>
-                <TableCell className="px-6 py-3 capitalize">
-                  {location.type}
-                </TableCell>
-                <TableCell className="px-6 py-3 max-w-xl h-fit whitespace-normal">
-                  {location.description}
-                </TableCell>
+                <TableCell className="px-6 py-3">{location.type}</TableCell>
+                <TableCell className="px-6 py-3">{location.description}</TableCell>
                 <TableCell className="px-6 py-3">
-                  <ActionButton
-                    isDelete
-                    isUpdate
-                    onDeleteClick={() => {
-                      setSelectedLocation(location);
-                      setDialogState((prev) => ({ ...prev, delete: true }));
-                    }}
+                  <ActionButton 
+                    isDelete 
+                    isUpdate 
                     onUpdateClick={() => {
                       setSelectedLocation(location);
-                      setDialogState((prev) => ({ ...prev, update: true }));
+                      setDialogOpen((prev) => ({ ...prev, update: true }));
+                    }}
+                    onDeleteClick={() => {
+                      setSelectedLocation(location);
+                      setDialogOpen((prev) => ({ ...prev, delete: true }));
                     }}
                   />
                 </TableCell>
-              </TableRow>
+              </TableRow>                                
             ))}
             {locations?.length === 0 && !isLoading && (
               <TableRow>
@@ -240,122 +149,31 @@ export function Location() {
         </Table>
       </Card>
 
+ {/* Dialog Delete */}
       <Dialog
-        open={dialogState.update}
+        open={dialogOpen.delete}
         onOpenChange={(value) =>
-          setDialogState((prev) => ({ ...prev, update: value }))
-        }
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Form Edit Lokasi</DialogTitle>
-            <DialogDescription>Edit data lokasi anda disini</DialogDescription>
-          </DialogHeader>
-          <form
-            onSubmit={(event) =>
-              handleSubmit(event, {
-                name: selectedLocation!.name,
-                type: selectedLocation!.type,
-                description: selectedLocation!.description,
-                id: selectedLocation!.id,
-              })
-            }
-          >
-            <FieldSet>
-              <FieldGroup>
-                <Field data-invalid={Boolean(formError?.name)}>
-                  <FieldLabel htmlFor="name">Nama Lokasi</FieldLabel>
-                  <Input
-                    aria-invalid={Boolean(formError?.name)}
-                    defaultValue={selectedLocation?.name}
-                    type="text"
-                    id="name"
-                    name="name"
-                    placeholder="Masukan nama kategori aset"
-                  />
-                  {formError?.name && (
-                    <FieldError>{formError.name[0]}</FieldError>
-                  )}
-                </Field>
-                <Field data-invalid={Boolean(formError?.type)}>
-                  <FieldLabel htmlFor="type">Tipe Lokasi</FieldLabel>
-                  <Select name="type" defaultValue={selectedLocation?.type}>
-                    <SelectTrigger aria-invalid={Boolean(formError?.type)}>
-                      <SelectValue id="type" placeholder="Pilih tipe ruangan" />
-                    </SelectTrigger>
-                    <SelectContent position="popper">
-                      {locationTypeSelect.map((type, index) => (
-                        <SelectItem
-                          key={`${type}-${index}`}
-                          value={type}
-                          className="capitalize"
-                        >
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {formError?.type && <FieldError>{formError.type}</FieldError>}
-                </Field>
-                <Field data-invalid={Boolean(formError?.description)}>
-                  <FieldLabel htmlFor="description">Deskripsi</FieldLabel>
-                  <Textarea
-                    defaultValue={selectedLocation?.description}
-                    aria-invalid={Boolean(formError?.description)}
-                    id="description"
-                    name="description"
-                    placeholder="Masukan deskripsi lokasi"
-                  />
-                  {formError?.description && (
-                    <FieldError>{formError.description}</FieldError>
-                  )}
-                </Field>
-              </FieldGroup>
-            </FieldSet>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant={"outline"}>
-                  Tutup
-                </Button>
-              </DialogClose>
-              <Button type="submit">Edit</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={dialogState.delete}
-        onOpenChange={(value) =>
-          setDialogState((prev) => ({ ...prev, delete: value }))
+          setDialogOpen((prev) => ({ ...prev, delete: value }))
         }
       >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Peringatan</DialogTitle>
             <DialogDescription>
-              Apakah anda yakin ingin menghapus lokasi {selectedLocation?.name}?
+              Apakah anda yakin ingin menghapus lokasi ini?
             </DialogDescription>
+            <DialogFooter>
+              <DialogClose>
+                <Button variant={"outline"}>Batal</Button>
+              </DialogClose>
+              <Button variant={"destructive"}>Ya</Button>
+            </DialogFooter>
           </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant={"outline"}>Tidak</Button>
-            </DialogClose>
-            <Button
-              variant={"destructive"}
-              onClick={() => mutationDelete(selectedLocation!.id)}
-              disabled={loadingDelete}
-            >
-              {loadingDelete ? <Spinner /> : "Ya"}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
-<<<<<<< Updated upstream
-=======
 
       {/* Dialog Edit */}
-      {selectedCategory && (
+      {selectedLocation && (
         <Dialog
           open={dialogOpen.update}
           onOpenChange={(value) =>
@@ -379,16 +197,18 @@ export function Location() {
                       id="name"
                       name="name"
                       placeholder="Masukan nama lokasi"
-                      defaultValue={selectedCategory.name}
+                      defaultValue={selectedLocation.name}
                     /> 
                     </Field>                   
                     <Field>
-                      <FieldLabel htmlFor="type">Pilih tipe Lokasi</FieldLabel>
-                        <Select
-                          id="type"
-                          name="type"
-                          defaultValue={selectedCategory.type}
-                        >
+                      <FieldLabel htmlFor="type">Tipe Lokasi</FieldLabel>
+                      <Select name="type" defaultValue={selectedLocation.type}>
+                        <option value="" disabled>
+                          Pilih tipe lokasi
+                        </option>
+                        <option value="ruangan">Ruangan</option>
+                        <option value="kantor">Kantor</option>
+                        <option value="gedung">Gedung</option>
                       </Select>
                     </Field>
                   <Field>
@@ -398,7 +218,7 @@ export function Location() {
                       id="description"
                       name="description"
                       placeholder="Masukan deskripsi lokasi"
-                      defaultValue={selectedCategory.description}
+                      defaultValue={selectedLocation.description}
                     />
                   </Field>
                 </FieldGroup>
@@ -407,14 +227,12 @@ export function Location() {
                 <DialogClose>
                   <Button variant={"outline"}>Batal</Button>
                 </DialogClose>
-                <Button>Edit</Button>
+               <Button>Edit</Button>
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
       )}
-
->>>>>>> Stashed changes
     </div>
   );
 }
