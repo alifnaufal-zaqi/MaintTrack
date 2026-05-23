@@ -143,7 +143,7 @@ export function Vendors() {
 
   const handleUpdate = async (
     event: SubmitEvent<HTMLFormElement>,
-    vendor: Vendor
+    vendor: Vendor,
   ) => {
     event.preventDefault();
     const formData = new FormData(event.target);

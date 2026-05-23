@@ -6,10 +6,10 @@ import {
   MapPin,
   Handshake,
   Tag,
-  Wrench,
   Repeat,
   FileBarChart,
   History,
+  Wrench,
 } from "lucide-react";
 
 type SidebarSubMenuItem = {

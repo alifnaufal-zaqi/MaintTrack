@@ -45,7 +45,7 @@ import { createClient } from "@/lib/client";
 import { LocationSchema } from "@/schemas/location";
 import { DialogState } from "@/types/dialog-state";
 import { FormLocation, Location as LocationType } from "@/types/locations";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { ChangeEvent, SubmitEvent, useState } from "react";
@@ -198,23 +198,21 @@ export function Location() {
               <TableRow key={location.id}>
                 <TableCell className="px-6 py-3">{index + 1}</TableCell>
                 <TableCell className="px-6 py-3">{location.name}</TableCell>
-                <TableCell className="px-6 py-3 capitalize">
-                  {location.type}
-                </TableCell>
-                <TableCell className="px-6 py-3 max-w-xl h-fit whitespace-normal">
+                <TableCell className="px-6 py-3">{location.type}</TableCell>
+                <TableCell className="px-6 py-3 max-w-xl whitespace-normal">
                   {location.description}
                 </TableCell>
                 <TableCell className="px-6 py-3">
                   <ActionButton
                     isDelete
                     isUpdate
-                    onDeleteClick={() => {
-                      setSelectedLocation(location);
-                      setDialogState((prev) => ({ ...prev, delete: true }));
-                    }}
                     onUpdateClick={() => {
                       setSelectedLocation(location);
                       setDialogState((prev) => ({ ...prev, update: true }));
+                    }}
+                    onDeleteClick={() => {
+                      setSelectedLocation(location);
+                      setDialogState((prev) => ({ ...prev, delete: true }));
                     }}
                   />
                 </TableCell>
@@ -247,8 +245,9 @@ export function Location() {
         </Table>
       </Card>
 
+      {/* Dialog Delete */}
       <Dialog
-        open={dialogState.update}
+        open={dialogState.delete}
         onOpenChange={(value) =>
           setDialogState((prev) => ({ ...prev, update: value }))
         }
@@ -334,23 +333,79 @@ export function Location() {
           <DialogHeader>
             <DialogTitle>Peringatan</DialogTitle>
             <DialogDescription>
-              Apakah anda yakin ingin menghapus lokasi {selectedLocation?.name}?
+              Apakah anda yakin ingin menghapus lokasi ini?
             </DialogDescription>
+            <DialogFooter>
+              <DialogClose>
+                <Button variant={"outline"}>Batal</Button>
+              </DialogClose>
+              <Button variant={"destructive"}>Ya</Button>
+            </DialogFooter>
           </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant={"outline"}>Tidak</Button>
-            </DialogClose>
-            <Button
-              variant={"destructive"}
-              onClick={() => mutationDelete(selectedLocation!.id)}
-              disabled={loadingDelete}
-            >
-              {loadingDelete ? <Spinner /> : "Ya"}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog Edit */}
+      {selectedLocation && (
+        <Dialog
+          open={dialogState.update}
+          onOpenChange={(value) =>
+            setDialogState((prev) => ({ ...prev, update: value }))
+          }
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Form Edit Lokasi</DialogTitle>
+              <DialogDescription>Edit Lokasi anda Disini</DialogDescription>
+            </DialogHeader>
+            <form action="">
+              <FieldSet>
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="name">Nama Lokasi</FieldLabel>
+                    <Input
+                      type="text"
+                      id="name"
+                      name="name"
+                      placeholder="Masukan nama lokasi"
+                      defaultValue={selectedLocation.name}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="type">Tipe Lokasi</FieldLabel>
+                    <Select name="type" defaultValue={selectedLocation.type}>
+                      <option value="" disabled>
+                        Pilih tipe lokasi
+                      </option>
+                      <option value="ruangan">Ruangan</option>
+                      <option value="kantor">Kantor</option>
+                      <option value="gedung">Gedung</option>
+                    </Select>
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="description">
+                      Deskripsi Lokasi
+                    </FieldLabel>
+                    <Input
+                      type="text"
+                      id="description"
+                      name="description"
+                      placeholder="Masukan deskripsi lokasi"
+                      defaultValue={selectedLocation.description}
+                    />
+                  </Field>
+                </FieldGroup>
+              </FieldSet>
+              <DialogFooter className="mt-4">
+                <DialogClose>
+                  <Button variant={"outline"}>Batal</Button>
+                </DialogClose>
+                <Button>Edit</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
