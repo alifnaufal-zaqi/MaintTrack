@@ -1,7 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Table } from "@/components/ui/table";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 
@@ -10,7 +12,7 @@ export function ListAssetsPage() {
     <div className="w-full space-y-4">
       <h1 className="text-xl text-primary font-bold">Manajemen Data Aset</h1>
 
-      <div className="flex gap-2 w-full">
+      <Card className="p-2">
         <Input
           type="search"
           placeholder="Cari data aset berdasarkan nama"
@@ -24,7 +26,9 @@ export function ListAssetsPage() {
             Tambah aset
           </Button>
         </Link>
-      </div>
+      </Card>
+
+      <Table></Table>
     </div>
   );
 }

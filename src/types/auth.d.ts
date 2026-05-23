@@ -6,3 +6,8 @@ export type Profile = {
   photoProfileUrl: string;
   role: "admin" | "operator";
 };
+
+export type AuthError = {
+  email?: string[];
+  password?: string[];
+};

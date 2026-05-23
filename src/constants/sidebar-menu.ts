@@ -1,4 +1,3 @@
-import { Maintenance } from "@/app/dashboard/admin/maintenance/_ui/maintenance";
 import {
   LayoutDashboard,
   Database,
@@ -7,6 +6,7 @@ import {
   MapPin,
   Handshake,
   Tag,
+  Repeat,
   FileBarChart,
   Wrench,
 } from "lucide-react";
@@ -65,18 +65,22 @@ export const SIDEBAR_MENU: SidebarMenu = {
     },
 
     {
-      title: "Pengguna",
-      icon: Users,
-      href: "/dashboard/admin/users",
-    },
-
-    {
-      title: "Perawatan",
+      title: "Data Maintenance",
       icon: Wrench,
       href: "/dashboard/admin/maintenance",
     },
 
-    // MENU BARU
+    {
+      title: "Data Movement",
+      icon: Repeat,
+      href: "/dashboard/admin/movements",
+    },
+
+    {
+      title: "Pengguna",
+      icon: Users,
+      href: "/dashboard/admin/users",
+    },
     {
       title: "Laporan",
       icon: FileBarChart,
@@ -84,5 +88,36 @@ export const SIDEBAR_MENU: SidebarMenu = {
     },
   ],
 
-  operator: [],
+  // Operator Menu
+  operator: [
+    {
+      title: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/dashboard/operator",
+    },
+
+    {
+      title: "Data Aset",
+      icon: Laptop,
+      href: "/dashboard/operator/assets",
+    },
+
+    {
+      title: "Data Maintenance",
+      icon: Wrench,
+      href: "/dashboard/operator/maintenance",
+    },
+
+    {
+      title: "Data Movement",
+      icon: Repeat,
+      href: "/dashboard/operator/movements",
+    },
+
+    {
+      title: "History",
+      icon: history,
+      href: "/dashboard/operator/history",
+    },
+  ],
 };

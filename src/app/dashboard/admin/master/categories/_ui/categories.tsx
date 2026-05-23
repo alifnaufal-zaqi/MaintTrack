@@ -28,16 +28,25 @@ import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
 import { createClient } from "@/lib/client";
 import { Category } from "@/types/categories";
-import { useQuery } from "@tanstack/react-query";
+import { DialogState } from "@/types/dialog-state";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 
 export function AssetsCategories() {
   const supabase = createClient();
+  const queryClient = useQueryClient();
   const { page, limit, handleLimitChange, handlePageChange } = usePagination();
   const { keyword, handleKeywordChange } = useSearch();
+  const [dialogOpen, setDialogOpen] = useState<DialogState>({
+    update: false,
+    delete: false,
+  });
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null
+  );
   const { data: categories, isLoading } = useQuery<Category[] | null>({
     queryKey: ["categories", page, limit, keyword],
     queryFn: async () => {
@@ -57,13 +66,61 @@ export function AssetsCategories() {
       return data;
     },
   });
-  const [dialogOpen, setDialogOpen] = useState<{
-    update: boolean;
-    delete: boolean;
-  }>({ update: false, delete: false });
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
-    null
-  );
+  const { isPending: updateLoading, mutate: mutationUpdate } = useMutation({
+    mutationFn: async (category: Pick<Category, "id" | "name">) => {
+      const { error } = await supabase
+        .from("categories")
+        .update({ name: category.name })
+        .eq("id", category.id);
+
+      if (error) {
+        throw error;
+      }
+    },
+    onError: (error) => {
+      toast.error("Gagal", { description: error.message });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["categories"],
+      });
+      setDialogOpen((prev) => ({ ...prev, update: false }));
+      toast.success("Berhasil", {
+        description: "Berhasil memperbarui data kategori",
+      });
+    },
+  });
+  const { isPending: deleteLoading, mutate: mutationDelete } = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("categories").delete().eq("id", id);
+
+      if (error) {
+        throw error;
+      }
+    },
+    onError: (error) => {
+      toast.error("Gagal", { description: error.message });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["categories"],
+      });
+      setDialogOpen((prev) => ({ ...prev, delete: false }));
+      toast.success("Berhasil", {
+        description: "Berhasil menghapus data kategori",
+      });
+    },
+  });
+
+  const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+    mutationUpdate({
+      id: selectedCategory!.id,
+      name: formData.get("name") as string,
+    });
+  };
 
   return (
     <div className="w-full space-y-4">
@@ -93,8 +150,13 @@ export function AssetsCategories() {
         <Table className="w-full rounded-lg overflow-hidden">
           <TableHeader className="bg-muted sticky top-0 z-10">
             <TableRow>
-              {CATEGORIES_TABLE_HEADER.map((head) => (
-                <TableHead className="capitalize px-6 py-3">{head}</TableHead>
+              {CATEGORIES_TABLE_HEADER.map((head, index) => (
+                <TableHead
+                  key={`${head}-${index}`}
+                  className="capitalize px-6 py-3"
+                >
+                  {head}
+                </TableHead>
               ))}
             </TableRow>
           </TableHeader>
@@ -117,7 +179,7 @@ export function AssetsCategories() {
                     }}
                   />
                 </TableCell>
-              </TableRow>                                
+              </TableRow>
             ))}
             {categories?.length === 0 && !isLoading && (
               <TableRow>
@@ -157,15 +219,21 @@ export function AssetsCategories() {
           <DialogHeader>
             <DialogTitle>Peringatan</DialogTitle>
             <DialogDescription>
-              Apakah anda yakin ingin menghapus kategori ini?
+              Apakah anda yakin ingin menghapus kategori{" "}
+              {selectedCategory?.name}?
             </DialogDescription>
-            <DialogFooter>
-              <DialogClose>
-                <Button variant={"outline"}>Batal</Button>
-              </DialogClose>
-              <Button variant={"destructive"}>Ya</Button>
-            </DialogFooter>
           </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant={"outline"}>Batal</Button>
+            </DialogClose>
+            <Button
+              variant={"destructive"}
+              onClick={() => mutationDelete(selectedCategory!.id)}
+            >
+              {deleteLoading ? <Spinner /> : "Ya"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -184,7 +252,7 @@ export function AssetsCategories() {
                 Edit Kategori Aset anda Disini
               </DialogDescription>
             </DialogHeader>
-            <form action="">
+            <form onSubmit={(event) => handleSubmit(event)}>
               <FieldSet>
                 <FieldGroup>
                   <Field>
@@ -203,7 +271,7 @@ export function AssetsCategories() {
                 <DialogClose>
                   <Button variant={"outline"}>Batal</Button>
                 </DialogClose>
-                <Button>Edit</Button>
+                <Button>{updateLoading ? <Spinner /> : "Edit"}</Button>
               </DialogFooter>
             </form>
           </DialogContent>
