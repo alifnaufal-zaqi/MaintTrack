@@ -56,7 +56,6 @@ export function Maintenance() {
 
   const { data: maintenances, isLoading } = useQuery<MaintenanceType[] | null>({
     queryKey: ["maintenances", page, limit, keyword],
-
     queryFn: async () => {
       const { data, error } = await supabase
         .from("maintenances")
@@ -131,8 +130,8 @@ export function Maintenance() {
                       maintenance.status === "Selesai"
                         ? "default"
                         : maintenance.status === "Diproses"
-                          ? "secondary"
-                          : "outline"
+                        ? "secondary"
+                        : "outline"
                     }
                   >
                     {maintenance.status}

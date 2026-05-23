@@ -133,10 +133,7 @@ export function Location() {
     },
   });
 
-  const handleSubmit = (
-    event: SubmitEvent<HTMLFormElement>,
-    location: Omit<LocationType, "created_at">
-  ) => {
+  const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.target);
 
@@ -152,7 +149,12 @@ export function Location() {
     }
 
     setFormError(null);
-    mutationUpdate(location);
+    mutationUpdate({
+      id: selectedLocation!.id,
+      name: validatedField.data.name,
+      type: validatedField.data.type,
+      description: validatedField.data.description,
+    });
   };
 
   return (
@@ -181,8 +183,13 @@ export function Location() {
         <Table className="w-full rounded-lg overflow-hidden">
           <TableHeader className="bg-muted sticky top-0 z-10">
             <TableRow>
-              {LOCATIONS_TABLE_HEADER.map((head) => (
-                <TableHead className="capitalize px-6 py-3">{head}</TableHead>
+              {LOCATIONS_TABLE_HEADER.map((head, index) => (
+                <TableHead
+                  key={`${head}-${index}`}
+                  className="capitalize px-6 py-3"
+                >
+                  {head}
+                </TableHead>
               ))}
             </TableRow>
           </TableHeader>
@@ -251,16 +258,7 @@ export function Location() {
             <DialogTitle>Form Edit Lokasi</DialogTitle>
             <DialogDescription>Edit data lokasi anda disini</DialogDescription>
           </DialogHeader>
-          <form
-            onSubmit={(event) =>
-              handleSubmit(event, {
-                name: selectedLocation!.name,
-                type: selectedLocation!.type,
-                description: selectedLocation!.description,
-                id: selectedLocation!.id,
-              })
-            }
-          >
+          <form onSubmit={handleSubmit}>
             <FieldSet>
               <FieldGroup>
                 <Field data-invalid={Boolean(formError?.name)}>
@@ -318,7 +316,9 @@ export function Location() {
                   Tutup
                 </Button>
               </DialogClose>
-              <Button type="submit">Edit</Button>
+              <Button type="submit">
+                {loadingUpdate ? <Spinner /> : "Edit"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
