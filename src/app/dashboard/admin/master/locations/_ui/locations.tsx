@@ -422,7 +422,7 @@ export function Location() {
                 </FieldGroup>
               </FieldSet>
               <DialogFooter className="mt-4">
-                <DialogClose>
+                <DialogClose asChild>
                   <Button variant={"outline"}>Batal</Button>
                 </DialogClose>
                 <Button type="submit" disabled={loadingUpdate}>

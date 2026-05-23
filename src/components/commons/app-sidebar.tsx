@@ -35,9 +35,16 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { ChevronRight, EllipsisVertical, LogOut } from "lucide-react";
 import { logout } from "@/app/actions/logout";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { useEffect } from "react";
 
 export default function AppSidebar({ profile }: { profile: Profile }) {
   const { isMobile } = useSidebar();
+  const setProfile = useAuthStore((state) => state.setProfile);
+
+  useEffect(() => {
+    setProfile(profile);
+  }, [profile]);
 
   return (
     <Sidebar collapsible="icon">
