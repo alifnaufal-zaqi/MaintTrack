@@ -351,6 +351,70 @@ export function Location() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+<<<<<<< Updated upstream
+=======
+
+      {/* Dialog Edit */}
+      {selectedCategory && (
+        <Dialog
+          open={dialogOpen.update}
+          onOpenChange={(value) =>
+            setDialogOpen((prev) => ({ ...prev, update: value }))
+          }
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Form Edit Lokasi</DialogTitle>
+              <DialogDescription>
+                Edit Lokasi anda Disini
+              </DialogDescription>
+            </DialogHeader>
+            <form action="">
+              <FieldSet>
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="name">Nama Lokasi</FieldLabel>
+                    <Input
+                      type="text"
+                      id="name"
+                      name="name"
+                      placeholder="Masukan nama lokasi"
+                      defaultValue={selectedCategory.name}
+                    /> 
+                    </Field>                   
+                    <Field>
+                      <FieldLabel htmlFor="type">Pilih tipe Lokasi</FieldLabel>
+                        <Select
+                          id="type"
+                          name="type"
+                          defaultValue={selectedCategory.type}
+                        >
+                      </Select>
+                    </Field>
+                  <Field>
+                  <FieldLabel htmlFor="description">Deskripsi Lokasi</FieldLabel>
+                    <Input
+                      type="text"
+                      id="description"
+                      name="description"
+                      placeholder="Masukan deskripsi lokasi"
+                      defaultValue={selectedCategory.description}
+                    />
+                  </Field>
+                </FieldGroup>
+              </FieldSet>
+              <DialogFooter className="mt-4">
+                <DialogClose>
+                  <Button variant={"outline"}>Batal</Button>
+                </DialogClose>
+                <Button>Edit</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
+
+>>>>>>> Stashed changes
     </div>
   );
 }
