@@ -1,45 +1,50 @@
-import {
-  useSupabaseUpload,
-  UseSupabaseUploadReturn,
-} from "@/hooks/use-supabase-upload";
-import { Dropzone, DropzoneContent, DropzoneEmptyState } from "../dropzone";
-import { cn } from "@/lib/utils";
+"use client";
+
+import { Upload } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 type DropzoneUploadProps = {
-  pathName: string;
-  name: string;
   id: string;
-  error: string | undefined;
-  files?: UseSupabaseUploadReturn["files"];
+  name: string;
+  error?: string;
 };
 
-export function DropzoneUpload({
-  pathName,
-  name,
-  id,
-  error,
-}: DropzoneUploadProps) {
-  const props = useSupabaseUpload({
-    bucketName: "MaintTrack-Assets",
-    path: pathName,
-    allowedMimeTypes: ["image/jpg", "image/png", "image/jpeg", "image/svg"],
-    maxFiles: 1,
-    maxFileSize: 1000 * 1000 * 2,
-  });
-
+export function DropzoneUpload({ id, name, error }: DropzoneUploadProps) {
   return (
-    <div className="p-1 space-y-2 h-full">
-      <Dropzone
-        {...props}
-        className={cn("h-full flex flex-col justify-center", {
-          "border border-red-500": error,
-        })}
-        id={id}
-        name={name}
+    <div className="space-y-2">
+      <label
+        htmlFor={id}
+        className="
+          border-2
+          border-dashed
+          rounded-lg
+          p-8
+          flex
+          flex-col
+          items-center
+          justify-center
+          cursor-pointer
+          text-center
+          w-full
+          min-h-[300px]
+        "
       >
-        <DropzoneContent />
-        <DropzoneEmptyState />
-      </Dropzone>
+        <Upload className="h-10 w-10 text-muted-foreground" />
+
+        <p className="font-medium mt-4">Upload file</p>
+
+        <p className="text-sm text-muted-foreground">
+          Drag and drop atau pilih file
+        </p>
+
+        <p className="text-sm text-muted-foreground">
+          Maksimum ukuran file: 2 MB
+        </p>
+
+        <Input id={id} name={name} type="file" className="hidden" />
+      </label>
+
+      {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );
 }

@@ -1,118 +1,221 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 import { Input } from "@/components/ui/input";
+
+import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
+
+import { Textarea } from "@/components/ui/textarea";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+import { DropzoneUpload } from "@/components/commons/dropzone-upload";
+
+import { Spinner } from "@/components/ui/spinner";
+
 import Link from "next/link";
-import { UploadCloud } from "lucide-react";
+
+import { createClient } from "@/lib/client";
+
+import { useMutation } from "@tanstack/react-query";
+
+import { SubmitEvent } from "react";
+
+import { toast } from "sonner";
+
+import { useRouter } from "next/navigation";
+
+type UserData = {
+  fullname: string;
+  email: string;
+  phone_number: string;
+  password: string;
+  role: string;
+  address: string;
+  photo_profile_url?: string;
+};
 
 export function FormUsers() {
+  const supabase = createClient();
+
+  const router = useRouter();
+
+  const { mutate, isPending: loading } = useMutation({
+    mutationFn: async (newUser: UserData) => {
+      const { error } = await supabase.from("users").insert(newUser);
+
+      if (error) throw error;
+    },
+
+    onSuccess: () => {
+      toast.success("Berhasil membuat pengguna");
+
+      router.push("/dashboard/admin/users");
+    },
+
+    onError: (error: any) => {
+      toast.error("Gagal", {
+        description: error.message,
+      });
+    },
+  });
+
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+
+    const fullname = formData.get("fullname") as string;
+
+    const email = formData.get("email") as string;
+
+    const phoneNumber = formData.get("contact") as string;
+
+    const password = formData.get("password") as string;
+
+    const role = formData.get("role") as string;
+
+    const address = formData.get("address") as string;
+
+    const file = formData.get("photo") as File;
+
+    let photoUrl = "";
+
+    if (file?.size > 0) {
+      const { data: uploadData, error } = await supabase.storage
+        .from("MaintTrack-Assets")
+        .upload(`users/${Date.now()}-${file.name}`, file);
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      const { data: publicData } = supabase.storage
+        .from("MaintTrack-Assets")
+        .getPublicUrl(uploadData.path);
+
+      photoUrl = publicData.publicUrl;
+    }
+
+    mutate({
+      fullname,
+      email,
+      phone_number: phoneNumber,
+      password,
+      role,
+      address,
+      photo_profile_url: photoUrl,
+    });
+  };
+
   return (
-    <div className="w-full space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Tambah Pengguna Baru</h1>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Form Pembuatan Pengguna</CardTitle>
 
-        <p className="text-sm text-muted-foreground mt-1">
-          Beranda &gt; Pengguna &gt; Tambah Pengguna
-        </p>
-      </div>
+        <CardDescription>Tambahkan Pengguna Aset anda Disini</CardDescription>
+      </CardHeader>
 
-      <Card className="w-full">
-        <form>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Form kiri */}
-              <div className="lg:col-span-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {/* Nama */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Nama Pengguna</label>
+      <form onSubmit={handleSubmit}>
+        <CardContent className="p-6">
+          <FieldSet className="grid lg:grid-cols-3 grid-cols-1">
+            <FieldGroup className="lg:col-span-2">
+              <Field>
+                <FieldLabel>Nama Pengguna</FieldLabel>
 
-                    <Input placeholder="Masukkan nama lengkap pengguna" />
-                  </div>
+                <Input name="fullname" placeholder="Masukkan nama pengguna" />
+              </Field>
 
-                  {/* Email */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Email</label>
+              <Field>
+                <FieldLabel>Email</FieldLabel>
 
-                    <Input type="email" placeholder="Masukkan email pengguna" />
-                  </div>
+                <Input type="email" name="email" placeholder="Masukkan email" />
+              </Field>
 
-                  {/* Nomor Kontak */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Nomor Kontak</label>
+              <Field>
+                <FieldLabel>Nomor Kontak</FieldLabel>
 
-                    <Input placeholder="Masukkan nomor kontak pengguna" />
-                  </div>
+                <Input
+                  name="contact"
+                  placeholder="Masukkan nomor kontak pengguna"
+                />
+              </Field>
 
-                  {/* Password */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Password</label>
+              <Field>
+                <FieldLabel>Password</FieldLabel>
 
-                    <Input
-                      type="password"
-                      placeholder="Masukkan password pengguna"
-                    />
-                  </div>
+                <Input
+                  type="password"
+                  name="password"
+                  placeholder="Masukkan password"
+                />
+              </Field>
 
-                  {/* Alamat */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Alamat</label>
+              <Field>
+                <FieldLabel>Role</FieldLabel>
 
-                    <Input placeholder="Masukkan alamat pengguna" />
-                  </div>
-                </div>
-              </div>
+                <Select name="role">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih role pengguna" />
+                  </SelectTrigger>
 
-              {/* Upload Foto */}
-              <div className="border rounded-lg p-5 h-fit">
-                <h3 className="font-medium text-center mb-4">Foto Pengguna</h3>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
 
-                <label
-                  className="
-                    border-2
-                    border-dashed
-                    rounded-lg
-                    p-8
-                    flex
-                    flex-col
-                    items-center
-                    justify-center
-                    cursor-pointer
-                    text-center
-                  "
-                >
-                  <UploadCloud className="h-10 w-10 text-muted-foreground" />
+                    <SelectItem value="operator">Operator</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
 
-                  <span className="font-medium mt-2">Unggah Foto Utama</span>
+              <Field>
+                <FieldLabel>Alamat</FieldLabel>
 
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Tarik dan lepas file di sini atau klik untuk memilih file
-                  </p>
+                <Textarea
+                  name="address"
+                  placeholder="Masukkan alamat pengguna"
+                />
+              </Field>
+            </FieldGroup>
 
-                  <p className="text-xs text-muted-foreground mt-4">
-                    PNG, JPG hingga 10MB
-                  </p>
+            <FieldGroup className="h-full">
+              <Field className="h-full">
+                <FieldLabel>Foto Pengguna</FieldLabel>
 
-                  <Input type="file" className="hidden" />
-                </label>
-              </div>
-            </div>
-          </CardContent>
+                <DropzoneUpload id="photo" name="photo" />
+              </Field>
+            </FieldGroup>
+          </FieldSet>
+        </CardContent>
 
-          <CardFooter className="flex justify-end gap-3 border-t p-6">
-            <Link href="/dashboard/admin/users">
-              <Button type="button" variant="outline">
-                Batal
-              </Button>
-            </Link>
+        <CardFooter className="flex justify-end gap-3 border-t p-6">
+          <Link href="/dashboard/admin/users">
+            <Button type="button" variant="outline">
+              Batal
+            </Button>
+          </Link>
 
-            <Button type="submit">Simpan</Button>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+          <Button type="submit" disabled={loading}>
+            {loading ? <Spinner /> : "Simpan"}
+          </Button>
+        </CardFooter>
+      </form>
+    </Card>
   );
 }

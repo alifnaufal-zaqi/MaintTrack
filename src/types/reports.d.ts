@@ -1,7 +1,7 @@
 type Report = {
   id: string;
   technician: string;
-  trouble_date: string;
+  terakhir_perawatan: string;
   status: string;
 
   assets: {
