@@ -57,7 +57,7 @@ export function FormCategories() {
         </CardContent>
         <CardFooter className="flex gap-2 justify-end mt-4">
           <Link href={"/dashboard/admin/master/categories"}>
-            <Button type="submit" variant={"outline"} className="text-primary">
+            <Button type="button" variant={"outline"} className="text-primary">
               Kembali
             </Button>
           </Link>

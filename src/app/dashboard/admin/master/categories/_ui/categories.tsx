@@ -28,6 +28,7 @@ import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
 import { createClient } from "@/lib/client";
 import { Category } from "@/types/categories";
+import { DialogState } from "@/types/dialog-state";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import Link from "next/link";
@@ -39,10 +40,10 @@ export function AssetsCategories() {
   const queryClient = useQueryClient();
   const { page, limit, handleLimitChange, handlePageChange } = usePagination();
   const { keyword, handleKeywordChange } = useSearch();
-  const [dialogOpen, setDialogOpen] = useState<{
-    update: boolean;
-    delete: boolean;
-  }>({ update: false, delete: false });
+  const [dialogOpen, setDialogOpen] = useState<DialogState>({
+    update: false,
+    delete: false,
+  });
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null
   );
@@ -149,8 +150,13 @@ export function AssetsCategories() {
         <Table className="w-full rounded-lg overflow-hidden">
           <TableHeader className="bg-muted sticky top-0 z-10">
             <TableRow>
-              {CATEGORIES_TABLE_HEADER.map((head) => (
-                <TableHead className="capitalize px-6 py-3">{head}</TableHead>
+              {CATEGORIES_TABLE_HEADER.map((head, index) => (
+                <TableHead
+                  key={`${head}-${index}`}
+                  className="capitalize px-6 py-3"
+                >
+                  {head}
+                </TableHead>
               ))}
             </TableRow>
           </TableHeader>
@@ -216,18 +222,18 @@ export function AssetsCategories() {
               Apakah anda yakin ingin menghapus kategori{" "}
               {selectedCategory?.name}?
             </DialogDescription>
-            <DialogFooter>
-              <DialogClose>
-                <Button variant={"outline"}>Batal</Button>
-              </DialogClose>
-              <Button
-                variant={"destructive"}
-                onClick={() => mutationDelete(selectedCategory!.id)}
-              >
-                {deleteLoading ? <Spinner /> : "Ya"}
-              </Button>
-            </DialogFooter>
           </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant={"outline"}>Batal</Button>
+            </DialogClose>
+            <Button
+              variant={"destructive"}
+              onClick={() => mutationDelete(selectedCategory!.id)}
+            >
+              {deleteLoading ? <Spinner /> : "Ya"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

@@ -5,3 +5,9 @@ export type Location = {
   description: string;
   created_at: string;
 };
+
+export type FormLocation = {
+  name?: Location["name"][] | undefined;
+  description?: Location["description"][] | undefined;
+  type?: Location["type"][] | undefined;
+};
