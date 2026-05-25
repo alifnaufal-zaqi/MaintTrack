@@ -15,6 +15,7 @@ import {
 import { FieldSet, FieldGroup } from "@/components/ui/field";
 import { SelectItem } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
+import { STATUS_ASSET } from "@/constants/asset-constant";
 import { useMasterData } from "@/hooks/use-mater-data";
 import { createClient } from "@/lib/client";
 import { AssetSchema } from "@/schemas/asset";

@@ -25,7 +25,15 @@ import Link from "next/link";
 import { ChangeEvent } from "react";
 import { toast } from "sonner";
 
-const USERS_TABLE_HEADER = ["No", "Nama", "Kontak", "Alamat", "Role", "Aksi"];
+const USERS_TABLE_HEADER = [
+  "No",
+  "Nama",
+  "Email",
+  "Nomor Kontak",
+  "Role",
+  "Alamat",
+  "Aksi",
+];
 
 type User = {
   id: string;

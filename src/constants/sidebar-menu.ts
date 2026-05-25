@@ -82,11 +82,6 @@ export const SIDEBAR_MENU: SidebarMenu = {
       icon: Users,
       href: "/dashboard/admin/users",
     },
-    {
-      title: "Laporan",
-      icon: FileBarChart,
-      href: "/dashboard/admin/reports",
-    },
   ],
 
   // Operator Menu
