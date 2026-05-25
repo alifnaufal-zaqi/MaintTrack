@@ -48,9 +48,7 @@ export function FormLocations() {
         .from("locations")
         .insert({ ...location });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Berhasil", {

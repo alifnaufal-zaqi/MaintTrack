@@ -24,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CATEGORIES_TABLE_HEADER } from "@/constants/categories-constant";
+import { useMasterData } from "@/hooks/use-mater-data";
 import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
 import { createClient } from "@/lib/client";
@@ -47,24 +48,11 @@ export function AssetsCategories() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null
   );
-  const { data: categories, isLoading } = useQuery<Category[] | null>({
-    queryKey: ["categories", page, limit, keyword],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("categories")
-        .select("*")
-        .range((page - 1) * limit, page * limit - 1)
-        .order("created_at")
-        .ilike("name", `%${keyword}%`);
-
-      if (error) {
-        toast.error("Gagal", {
-          description: error.message,
-        });
-      }
-
-      return data;
-    },
+  const { data: categories, isLoading } = useMasterData<Category[]>({
+    table: "categories",
+    keyword,
+    offset: { from: (page - 1) * limit, to: page * limit - 1 },
+    key: ["categories", page, limit, keyword],
   });
   const { isPending: updateLoading, mutate: mutationUpdate } = useMutation({
     mutationFn: async (category: Pick<Category, "id" | "name">) => {

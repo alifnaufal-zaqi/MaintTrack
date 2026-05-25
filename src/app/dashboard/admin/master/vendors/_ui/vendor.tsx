@@ -43,6 +43,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { DropzoneUpload } from "@/components/commons/dropzone-upload";
 import { VendorSchema } from "@/schemas/vendor";
+import { useMasterData } from "@/hooks/use-mater-data";
 
 const VENDORS_TABLE_HEADER = [
   "Logo",
@@ -64,24 +65,11 @@ export function Vendors() {
   });
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [formError, setFormError] = useState<FormVendor | null>(null);
-  const { data: vendors, isLoading } = useQuery<Vendor[] | null>({
-    queryKey: ["vendors", page, limit, keyword],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vendors")
-        .select("*")
-        .range((page - 1) * limit, page * limit - 1)
-        .order("created_at")
-        .ilike("name", `%${keyword}%`);
-
-      if (error) {
-        toast.error("Gagal", {
-          description: error.message,
-        });
-      }
-
-      return data;
-    },
+  const { data: vendors, isLoading } = useMasterData<Vendor[]>({
+    table: "vendors",
+    key: ["vendors", page, limit, keyword],
+    keyword,
+    offset: { from: (page - 1) * limit, to: page * limit - 1 },
   });
   const { mutate: deleteMutation, isPending: deleteLoading } = useMutation({
     mutationFn: async ({ id, logoPath }: { id: string; logoPath: string }) => {
@@ -143,7 +131,7 @@ export function Vendors() {
 
   const handleUpdate = async (
     event: SubmitEvent<HTMLFormElement>,
-    vendor: Vendor,
+    vendor: Vendor
   ) => {
     event.preventDefault();
     const formData = new FormData(event.target);
@@ -387,18 +375,13 @@ export function Vendors() {
                     <FieldError>{formError.address[0]}</FieldError>
                   )}
                 </Field>
-                <Field data-invalid={Boolean(formError?.logo)}>
-                  <FieldLabel htmlFor="logo">Logo Vendor</FieldLabel>
-                  <DropzoneUpload
-                    id="logo"
-                    name="logo"
-                    pathName="vendor"
-                    error={formError?.logo?.[0]}
-                  />
-                  {formError?.logo && (
-                    <FieldError>{formError.logo[0]}</FieldError>
-                  )}
-                </Field>
+                <DropzoneUpload
+                  label="Logo Vendor"
+                  id="logo"
+                  name="logo"
+                  pathName="vendor"
+                  error={formError?.logo?.[0]}
+                />
               </FieldGroup>
             </FieldSet>
             <DialogFooter className="mt-4">
