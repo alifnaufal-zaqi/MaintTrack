@@ -1,10 +1,31 @@
 "use client";
 
+import { useState, ChangeEvent } from "react";
+
 import { Card } from "@/components/ui/card";
 
 import { Input } from "@/components/ui/input";
 
 import { Spinner } from "@/components/ui/spinner";
+
+import { Button } from "@/components/ui/button";
+
+import { Badge } from "@/components/ui/badge";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import {
   Table,
@@ -15,36 +36,44 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { Badge } from "@/components/ui/badge";
+import usePagination from "@/hooks/use-pagination";
+
+import useSearch from "@/hooks/use-search";
 
 import { createClient } from "@/lib/client";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { ChangeEvent } from "react";
-
-import usePagination from "@/hooks/use-pagination";
-import useSearch from "@/hooks/use-search";
+import { Filter, MoreVertical } from "lucide-react";
 
 import { toast } from "sonner";
 
 const MAINTENANCE_TABLE_HEADER = [
   "Nama Asset",
   "Tanggal",
-  "Vendor",
+  "Tipe Maintenance",
+  "PIC",
   "Status",
-  "Petugas",
   "Keterangan",
+  "Aksi",
 ];
 
 type MaintenanceType = {
   id: string;
+
   asset_name: string;
+
   maintenance_date: string;
-  vendor_name: string;
+
+  maintenance_type: string;
+
+  pic: string;
+
   status: string;
-  technician: string;
+
   description: string;
+
+  created_at: string;
 };
 
 export function Maintenance() {
@@ -54,45 +83,81 @@ export function Maintenance() {
 
   const { keyword, handleKeywordChange } = useSearch();
 
-  const { data: maintenances, isLoading } = useQuery<MaintenanceType[] | null>({
-    queryKey: ["maintenances", page, limit, keyword],
+  const [type, setType] = useState("all");
+
+  const { data: maintenances = [], isLoading } = useQuery<MaintenanceType[]>({
+    queryKey: ["maintenances", page, limit, keyword, type],
+
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("maintenances")
+      let query = supabase
+        .from("maintenance_logs")
         .select("*")
         .range((page - 1) * limit, page * limit - 1)
-        .order("created_at")
+        .order("created_at", {
+          ascending: false,
+        })
         .ilike("asset_name", `%${keyword}%`);
+
+      if (type !== "all") {
+        query = query.eq("maintenance_type", type);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         toast.error("Gagal", {
           description: error.message,
         });
+
+        return [];
       }
 
-      return data;
+      return data ?? [];
     },
   });
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-6">
       {/* TITLE */}
-      <h1 className="text-xl font-bold text-primary">Manajemen Maintenance</h1>
+      <h1 className="text-2xl font-bold text-primary">Manajemen Maintenance</h1>
 
-      {/* SEARCH */}
-      <Card className="p-2">
-        <Input
-          type="search"
-          placeholder="Cari data maintenance..."
-          onChange={(event: ChangeEvent<HTMLInputElement>) =>
-            handleKeywordChange(event.target.value)
-          }
-        />
+      {/* SEARCH + FILTER */}
+      <Card className="p-4">
+        <div className="flex flex-col lg:flex-row gap-3">
+          {/* SEARCH */}
+          <Input
+            type="search"
+            placeholder="Cari data maintenance..."
+            className="flex-1"
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
+              handleKeywordChange(event.target.value)
+            }
+          />
+
+          {/* FILTER */}
+          <div className="flex gap-3">
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger className="w-[220px]">
+                <Filter className="mr-2 h-4 w-4" />
+
+                <SelectValue placeholder="Filter tipe maintenance" />
+              </SelectTrigger>
+
+              <SelectContent>
+                <SelectItem value="all">Semua</SelectItem>
+
+                <SelectItem value="Rutin">Rutin</SelectItem>
+
+                <SelectItem value="Perbaikan">Perbaikan</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </Card>
 
       {/* TABLE */}
-      <Card className="p-0 overflow-hidden">
-        <Table className="w-full">
+      <Card className="overflow-hidden p-0">
+        <Table>
           {/* HEADER */}
           <TableHeader className="bg-muted">
             <TableRow>
@@ -106,74 +171,87 @@ export function Maintenance() {
 
           {/* BODY */}
           <TableBody>
-            {maintenances?.map((maintenance) => (
-              <TableRow key={maintenance.id}>
-                {/* ASSET */}
-                <TableCell className="px-6 py-4">
-                  {maintenance.asset_name}
-                </TableCell>
-
-                {/* DATE */}
-                <TableCell className="px-6 py-4">
-                  {maintenance.maintenance_date}
-                </TableCell>
-
-                {/* VENDOR */}
-                <TableCell className="px-6 py-4">
-                  {maintenance.vendor_name}
-                </TableCell>
-
-                {/* STATUS */}
-                <TableCell className="px-6 py-4">
-                  <Badge
-                    variant={
-                      maintenance.status === "Selesai"
-                        ? "default"
-                        : maintenance.status === "Diproses"
-                        ? "secondary"
-                        : "outline"
-                    }
-                  >
-                    {maintenance.status}
-                  </Badge>
-                </TableCell>
-
-                {/* PETUGAS */}
-                <TableCell className="px-6 py-4">
-                  {maintenance.technician}
-                </TableCell>
-
-                {/* DESCRIPTION */}
-                <TableCell className="px-6 py-4">
-                  {maintenance.description}
-                </TableCell>
-              </TableRow>
-            ))}
-
-            {/* EMPTY */}
-            {maintenances?.length === 0 && !isLoading && (
-              <TableRow>
-                <TableCell
-                  colSpan={MAINTENANCE_TABLE_HEADER.length}
-                  className="h-24 text-center"
-                >
-                  Data maintenance belum tersedia
-                </TableCell>
-              </TableRow>
-            )}
-
-            {/* LOADING */}
-            {isLoading && (
+            {isLoading ? (
               <TableRow>
                 <TableCell
                   colSpan={MAINTENANCE_TABLE_HEADER.length}
                   className="h-24"
                 >
-                  <div className="flex flex-col justify-center items-center gap-2">
+                  <div className="flex flex-col items-center gap-2">
                     <Spinner />
 
-                    <span>Memuat data maintenance...</span>
+                    <span>Memuat...</span>
                   </div>
+                </TableCell>
+              </TableRow>
+            ) : maintenances.length > 0 ? (
+              maintenances.map((maintenance) => (
+                <TableRow key={maintenance.id}>
+                  {/* NAMA ASSET */}
+                  <TableCell className="px-6 py-4">
+                    {maintenance.asset_name}
+                  </TableCell>
+
+                  {/* TANGGAL */}
+                  <TableCell className="px-6 py-4">
+                    {maintenance.maintenance_date}
+                  </TableCell>
+
+                  {/* TIPE */}
+                  <TableCell className="px-6 py-4">
+                    {maintenance.maintenance_type}
+                  </TableCell>
+
+                  {/* PIC */}
+                  <TableCell className="px-6 py-4">{maintenance.pic}</TableCell>
+
+                  {/* STATUS */}
+                  <TableCell className="px-6 py-4">
+                    <Badge
+                      variant={
+                        maintenance.status === "Selesai"
+                          ? "default"
+                          : maintenance.status === "Proses"
+                            ? "secondary"
+                            : "outline"
+                      }
+                    >
+                      {maintenance.status}
+                    </Badge>
+                  </TableCell>
+
+                  {/* KETERANGAN */}
+                  <TableCell className="px-6 py-4">
+                    {maintenance.description}
+                  </TableCell>
+
+                  {/* AKSI */}
+                  <TableCell className="px-6 py-4">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="icon" variant="ghost">
+                          <MoreVertical className="w-5 h-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>Planning</DropdownMenuItem>
+
+                        <DropdownMenuItem>Proses</DropdownMenuItem>
+
+                        <DropdownMenuItem>Selesai</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={MAINTENANCE_TABLE_HEADER.length}
+                  className="h-32 text-center"
+                >
+                  Data maintenance belum tersedia
                 </TableCell>
               </TableRow>
             )}
