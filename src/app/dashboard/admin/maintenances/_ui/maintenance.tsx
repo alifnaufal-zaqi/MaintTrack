@@ -8,8 +8,6 @@ import { Input } from "@/components/ui/input";
 
 import { Spinner } from "@/components/ui/spinner";
 
-import { Button } from "@/components/ui/button";
-
 import { Badge } from "@/components/ui/badge";
 
 import {
@@ -19,13 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 import {
   Table,
@@ -44,18 +35,18 @@ import { createClient } from "@/lib/client";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { Filter, MoreVertical } from "lucide-react";
+import { Filter } from "lucide-react";
 
 import { toast } from "sonner";
 
 const MAINTENANCE_TABLE_HEADER = [
+  "No",
   "Nama Asset",
   "Tanggal",
   "Tipe Maintenance",
   "PIC",
-  "Status",
+  "Status Progres",
   "Keterangan",
-  "Aksi",
 ];
 
 type MaintenanceType = {
@@ -69,7 +60,7 @@ type MaintenanceType = {
 
   pic: string;
 
-  status: string;
+  progress_status: string;
 
   description: string;
 
@@ -118,13 +109,11 @@ export function Maintenance() {
 
   return (
     <div className="w-full space-y-6">
-      {/* TITLE */}
       <h1 className="text-2xl font-bold text-primary">Manajemen Maintenance</h1>
 
       {/* SEARCH + FILTER */}
       <Card className="p-4">
         <div className="flex flex-col lg:flex-row gap-3">
-          {/* SEARCH */}
           <Input
             type="search"
             placeholder="Cari data maintenance..."
@@ -134,7 +123,6 @@ export function Maintenance() {
             }
           />
 
-          {/* FILTER */}
           <div className="flex gap-3">
             <Select value={type} onValueChange={setType}>
               <SelectTrigger className="w-[220px]">
@@ -158,7 +146,6 @@ export function Maintenance() {
       {/* TABLE */}
       <Card className="overflow-hidden p-0">
         <Table>
-          {/* HEADER */}
           <TableHeader className="bg-muted">
             <TableRow>
               {MAINTENANCE_TABLE_HEADER.map((head) => (
@@ -169,7 +156,6 @@ export function Maintenance() {
             </TableRow>
           </TableHeader>
 
-          {/* BODY */}
           <TableBody>
             {isLoading ? (
               <TableRow>
@@ -185,8 +171,11 @@ export function Maintenance() {
                 </TableCell>
               </TableRow>
             ) : maintenances.length > 0 ? (
-              maintenances.map((maintenance) => (
+              maintenances.map((maintenance, index) => (
                 <TableRow key={maintenance.id}>
+                  {/* NO */}
+                  <TableCell className="px-6 py-4">{index + 1}</TableCell>
+
                   {/* NAMA ASSET */}
                   <TableCell className="px-6 py-4">
                     {maintenance.asset_name}
@@ -209,39 +198,20 @@ export function Maintenance() {
                   <TableCell className="px-6 py-4">
                     <Badge
                       variant={
-                        maintenance.status === "Selesai"
+                        maintenance.progress_status === "Selesai"
                           ? "default"
-                          : maintenance.status === "Proses"
+                          : maintenance.progress_status === "Proses"
                             ? "secondary"
                             : "outline"
                       }
                     >
-                      {maintenance.status}
+                      {maintenance.progress_status}
                     </Badge>
                   </TableCell>
 
                   {/* KETERANGAN */}
                   <TableCell className="px-6 py-4">
                     {maintenance.description}
-                  </TableCell>
-
-                  {/* AKSI */}
-                  <TableCell className="px-6 py-4">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button size="icon" variant="ghost">
-                          <MoreVertical className="w-5 h-5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Planning</DropdownMenuItem>
-
-                        <DropdownMenuItem>Proses</DropdownMenuItem>
-
-                        <DropdownMenuItem>Selesai</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))
