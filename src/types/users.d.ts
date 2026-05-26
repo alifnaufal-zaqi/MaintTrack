@@ -1,10 +1,20 @@
 export type User = {
   id: string;
-  user_id: string;
   fullname: string;
+  email: string;
   phone_number: string;
-  address: string;
-  photo_profile_url: string;
+  password: string;
   role: string;
-  created_at: string;
+  address: string;
+  photo_profile_url?: string;
+  created_at?: string;
+};
+
+export type FormUser = {
+  fullname?: string[];
+  email?: string[];
+  phone_number?: string[];
+  password?: string[];
+  role?: string[];
+  address?: string[];
 };

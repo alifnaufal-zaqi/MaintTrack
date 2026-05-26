@@ -10,13 +10,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldSet,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-
-import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
-
-import { Textarea } from "@/components/ui/textarea";
-
 import {
   Select,
   SelectContent,
@@ -24,52 +25,47 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-import { DropzoneUpload } from "@/components/commons/dropzone-upload";
-
 import { Spinner } from "@/components/ui/spinner";
-
-import Link from "next/link";
-
+import { Textarea } from "@/components/ui/textarea";
+import { DropzoneUpload } from "@/components/commons/dropzone-upload";
 import { createClient } from "@/lib/client";
-
+import { UserSchema } from "@/schemas/user";
+import { User, FormUser } from "@/types/users";
 import { useMutation } from "@tanstack/react-query";
-
-import { SubmitEvent } from "react";
-
-import { toast } from "sonner";
-
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-
-type UserData = {
-  fullname: string;
-  email: string;
-  phone_number: string;
-  password: string;
-  role: string;
-  address: string;
-  photo_profile_url?: string;
-};
-
+import { SubmitEvent, useState } from "react";
+import { toast } from "sonner";
 export function FormUsers() {
   const supabase = createClient();
-
   const router = useRouter();
-
+  const [formError, setFormError] = useState<FormUser | null>(null);
   const { mutate, isPending: loading } = useMutation({
-    mutationFn: async (newUser: UserData) => {
-      const { error } = await supabase.from("users").insert(newUser);
-
+    mutationFn: async (
+      user: Pick<
+        User,
+        | "fullname"
+        | "email"
+        | "phone_number"
+        | "password"
+        | "role"
+        | "address"
+        | "photo_profile_url"
+      >,
+    ) => {
+      const { error } = await supabase.from("users").insert({
+        ...user,
+      });
       if (error) throw error;
     },
-
     onSuccess: () => {
-      toast.success("Berhasil membuat pengguna");
+      toast.success("Berhasil", {
+        description: "Berhasil membuat data pengguna",
+      });
 
       router.push("/dashboard/admin/users");
     },
-
-    onError: (error: any) => {
+    onError: (error) => {
       toast.error("Gagal", {
         description: error.message,
       });
@@ -81,46 +77,63 @@ export function FormUsers() {
 
     const formData = new FormData(event.currentTarget);
 
-    const fullname = formData.get("fullname") as string;
+    const validatedField = UserSchema.safeParse({
+      fullname: formData.get("fullname"),
 
-    const email = formData.get("email") as string;
+      email: formData.get("email"),
 
-    const phoneNumber = formData.get("contact") as string;
+      phone_number: formData.get("phone_number"),
 
-    const password = formData.get("password") as string;
+      password: formData.get("password"),
 
-    const role = formData.get("role") as string;
+      role: formData.get("role"),
 
-    const address = formData.get("address") as string;
+      address: formData.get("address"),
+    });
 
-    const file = formData.get("photo") as File;
+    if (!validatedField.success) {
+      setFormError(validatedField.error.flatten().fieldErrors);
+
+      return;
+    }
+
+    setFormError(null);
 
     let photoUrl = "";
 
+    const file = formData.get("photo") as File;
+
     if (file?.size > 0) {
-      const { data: uploadData, error } = await supabase.storage
+      const { data, error } = await supabase.storage
         .from("MaintTrack-Assets")
         .upload(`users/${Date.now()}-${file.name}`, file);
 
       if (error) {
         toast.error(error.message);
+
         return;
       }
 
       const { data: publicData } = supabase.storage
         .from("MaintTrack-Assets")
-        .getPublicUrl(uploadData.path);
+        .getPublicUrl(data.path);
 
       photoUrl = publicData.publicUrl;
     }
 
     mutate({
-      fullname,
-      email,
-      phone_number: phoneNumber,
-      password,
-      role,
-      address,
+      fullname: validatedField.data.fullname,
+
+      email: validatedField.data.email,
+
+      phone_number: validatedField.data.phone_number,
+
+      password: validatedField.data.password,
+
+      role: validatedField.data.role,
+
+      address: validatedField.data.address,
+
       photo_profile_url: photoUrl,
     });
   };
@@ -130,17 +143,21 @@ export function FormUsers() {
       <CardHeader>
         <CardTitle>Form Pembuatan Pengguna</CardTitle>
 
-        <CardDescription>Tambahkan Pengguna Aset anda Disini</CardDescription>
+        <CardDescription>Buat Pengguna anda Disini</CardDescription>
       </CardHeader>
 
       <form onSubmit={handleSubmit}>
-        <CardContent className="p-6">
-          <FieldSet className="grid lg:grid-cols-3 grid-cols-1">
-            <FieldGroup className="lg:col-span-2">
-              <Field>
-                <FieldLabel>Nama Pengguna</FieldLabel>
+        <CardContent>
+          <FieldSet>
+            <FieldGroup>
+              <Field data-invalid={Boolean(formError?.fullname)}>
+                <FieldLabel>Nama</FieldLabel>
 
                 <Input name="fullname" placeholder="Masukkan nama pengguna" />
+
+                {formError?.fullname && (
+                  <FieldError>{formError.fullname[0]}</FieldError>
+                )}
               </Field>
 
               <Field>
@@ -153,8 +170,8 @@ export function FormUsers() {
                 <FieldLabel>Nomor Kontak</FieldLabel>
 
                 <Input
-                  name="contact"
-                  placeholder="Masukkan nomor kontak pengguna"
+                  name="phone_number"
+                  placeholder="Masukkan nomor kontak"
                 />
               </Field>
 
@@ -173,7 +190,7 @@ export function FormUsers() {
 
                 <Select name="role">
                   <SelectTrigger>
-                    <SelectValue placeholder="Pilih role pengguna" />
+                    <SelectValue placeholder="Pilih role" />
                   </SelectTrigger>
 
                   <SelectContent>
@@ -187,27 +204,24 @@ export function FormUsers() {
               <Field>
                 <FieldLabel>Alamat</FieldLabel>
 
-                <Textarea
-                  name="address"
-                  placeholder="Masukkan alamat pengguna"
-                />
+                <Textarea name="address" placeholder="Masukkan alamat" />
               </Field>
-            </FieldGroup>
 
-            <FieldGroup className="h-full">
-              <Field className="h-full">
-                <FieldLabel>Foto Pengguna</FieldLabel>
-
-                <DropzoneUpload id="photo" name="photo" />
-              </Field>
+              <DropzoneUpload
+                id="photo"
+                name="photo"
+                label="Foto Pengguna"
+                pathName="users"
+                error={undefined}
+              />
             </FieldGroup>
           </FieldSet>
         </CardContent>
 
-        <CardFooter className="flex justify-end gap-3 border-t p-6">
+        <CardFooter className="flex gap-2 justify-end mt-4">
           <Link href="/dashboard/admin/users">
-            <Button type="button" variant="outline">
-              Batal
+            <Button type="button" variant="outline" className="text-primary">
+              Kembali
             </Button>
           </Link>
 
