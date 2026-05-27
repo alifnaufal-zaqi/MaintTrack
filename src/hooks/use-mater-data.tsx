@@ -26,7 +26,10 @@ export function useMasterData<T>({
 
       if (offset) {
         query.range(offset.from, offset.to);
-        query.ilike("name", `%${keyword}%`);
+        query.ilike(
+          table === "user_profiles" ? "fullname" : "name",
+          `%${keyword}%`
+        );
       }
 
       const { data, error } = await query;

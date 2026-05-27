@@ -1,9 +1,9 @@
 export const USERS_TABLE_HEADER = [
-  "No",
+  "Profile",
   "Nama",
   "Email",
   "Nomor Kontak",
-  "Role",
   "Alamat",
+  "Role",
   "Aksi",
 ];

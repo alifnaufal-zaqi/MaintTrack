@@ -1,8 +1,20 @@
 "use client";
 
+import { resetPassword } from "@/app/actions/reset-password";
 import { ActionButton } from "@/components/commons/action-button";
+import { FieldInput } from "@/components/commons/field-input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { FieldGroup, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -14,40 +26,45 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { USERS_TABLE_HEADER } from "@/constants/users-constant";
+import { useMasterData } from "@/hooks/use-mater-data";
 import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
-import { createClient } from "@/lib/client";
 import { User } from "@/types/users";
-import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
-import { ChangeEvent } from "react";
+import { useRouter } from "next/navigation";
+import { ChangeEvent, useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export function AssetsUsers() {
-  const supabase = createClient();
+  const router = useRouter();
   const { page, limit, handleLimitChange, handlePageChange } = usePagination();
   const { keyword, handleKeywordChange } = useSearch();
-  const { data: users, isLoading } = useQuery<User[] | null>({
-    queryKey: ["users", page, limit, keyword],
-
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .range((page - 1) * limit, page * limit - 1)
-        .order("created_at")
-        .ilike("fullname", `%${keyword}%`);
-
-      if (error) {
-        toast.error("Gagal", {
-          description: error.message,
-        });
-      }
-
-      return data;
-    },
+  const { data: users, isLoading } = useMasterData<User[] | null>({
+    table: "user_profiles",
+    key: ["users", page, limit, keyword],
+    keyword,
+    offset: { from: (page - 1) * limit, to: page * limit - 1 },
   });
+  const [dialogState, setDialogState] = useState({ reset: false });
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const resetPasswordWithId = resetPassword.bind(null, selectedUser?.user_id);
+  const [state, action, loading] = useActionState(
+    resetPasswordWithId,
+    undefined
+  );
+
+  useEffect(() => {
+    if (state?.status === "success") {
+      toast.success("Berhasil", { description: state.message });
+      setDialogState((prev) => ({ ...prev, reset: false }));
+    }
+
+    if (state?.status === "error" && state?.message) {
+      toast.error("Gagal", { description: state.message });
+    }
+  }, [state, router]);
 
   return (
     <div className="w-full space-y-4">
@@ -89,14 +106,30 @@ export function AssetsUsers() {
           <TableBody>
             {users?.map((user, index) => (
               <TableRow key={user.id}>
-                <TableCell className="px-6 py-3">{index + 1}</TableCell>
+                <TableCell>
+                  <Image
+                    alt={user.fullname}
+                    src={user.photo_profile_url}
+                    width={0}
+                    height={0}
+                    className="w-12 h-12 mx-4 rounded-full border"
+                  />
+                </TableCell>
                 <TableCell className="px-6 py-3">{user.fullname}</TableCell>
                 <TableCell className="px-6 py-3">{user.email}</TableCell>
                 <TableCell className="px-6 py-3">{user.phone_number}</TableCell>
-                <TableCell className="px-6 py-3">{user.role}</TableCell>
-                <TableCell className="px-6 py-3">{user.address}</TableCell>
                 <TableCell className="px-6 py-3">
-                  <ActionButton isDelete isUpdate />
+                  {user.address === null ? "-" : user.address}
+                </TableCell>
+                <TableCell className="px-6 py-3">{user.role}</TableCell>
+                <TableCell className="px-6 py-3">
+                  <ActionButton
+                    isResetPassword
+                    onResetPasswordClick={() => {
+                      setSelectedUser(user);
+                      setDialogState((prev) => ({ ...prev, reset: true }));
+                    }}
+                  />
                 </TableCell>
               </TableRow>
             ))}
@@ -125,6 +158,50 @@ export function AssetsUsers() {
           </TableBody>
         </Table>
       </Card>
+
+      <Dialog
+        open={dialogState.reset}
+        onOpenChange={(value) =>
+          setDialogState((prev) => ({ ...prev, reset: value }))
+        }
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Ubah password pengguna anda disini
+            </DialogDescription>
+          </DialogHeader>
+          <form action={action}>
+            <FieldSet>
+              <FieldGroup>
+                <FieldInput
+                  id="password"
+                  name="newPassword"
+                  error={state?.errors?.newPassword?.[0]}
+                  label="Password Baru"
+                  type="password"
+                  placeholder="*****"
+                />
+                <FieldInput
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  error={state?.errors?.confirmPassword?.[0]}
+                  label="Konfirmasi Password"
+                  type="password"
+                  placeholder="*****"
+                />
+              </FieldGroup>
+            </FieldSet>
+            <DialogFooter className="mt-4">
+              <DialogClose asChild>
+                <Button variant={"outline"}>Tutup</Button>
+              </DialogClose>
+              <Button type="submit">{loading ? <Spinner /> : "Edit"}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

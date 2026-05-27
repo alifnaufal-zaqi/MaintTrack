@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-
 import {
   Card,
   CardContent,
@@ -10,24 +9,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-  FieldSet,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { FieldGroup, FieldSet } from "@/components/ui/field";
+import { SelectItem } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
-import { DropzoneUpload } from "@/components/commons/dropzone-upload";
 import { createClient } from "@/lib/client";
 import { UserSchema } from "@/schemas/user";
 import { User, FormUser } from "@/types/users";
@@ -36,27 +20,32 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SubmitEvent, useState } from "react";
 import { toast } from "sonner";
+import { validateFormData } from "@/utils/validate-data";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { FieldInput } from "@/components/commons/field-input";
+import { FieldSelect } from "@/components/commons/field-select";
+
 export function FormUsers() {
   const supabase = createClient();
   const router = useRouter();
+  const [checked, setChecked] = useState<boolean>(false);
   const [formError, setFormError] = useState<FormUser | null>(null);
   const { mutate, isPending: loading } = useMutation({
     mutationFn: async (
-      user: Pick<
-        User,
-        | "fullname"
-        | "email"
-        | "phone_number"
-        | "password"
-        | "role"
-        | "address"
-        | "photo_profile_url"
-      >,
+      user: Pick<User, "fullname" | "email" | "password" | "role">
     ) => {
-      const { error } = await supabase.from("users").insert({
-        ...user,
+      const { error: registerUserError } = await supabase.auth.signUp({
+        email: user.email,
+        password: user.password,
+        options: {
+          data: {
+            fullname: user.fullname,
+            role: user.role,
+          },
+        },
       });
-      if (error) throw error;
+      if (registerUserError) throw registerUserError;
     },
     onSuccess: () => {
       toast.success("Berhasil", {
@@ -74,67 +63,25 @@ export function FormUsers() {
 
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     const formData = new FormData(event.currentTarget);
 
-    const validatedField = UserSchema.safeParse({
-      fullname: formData.get("fullname"),
+    const { error: validationError, result } = validateFormData(
+      formData,
+      UserSchema
+    );
 
-      email: formData.get("email"),
-
-      phone_number: formData.get("phone_number"),
-
-      password: formData.get("password"),
-
-      role: formData.get("role"),
-
-      address: formData.get("address"),
-    });
-
-    if (!validatedField.success) {
-      setFormError(validatedField.error.flatten().fieldErrors);
-
+    if (validationError) {
+      setFormError(validationError);
       return;
     }
 
     setFormError(null);
 
-    let photoUrl = "";
-
-    const file = formData.get("photo") as File;
-
-    if (file?.size > 0) {
-      const { data, error } = await supabase.storage
-        .from("MaintTrack-Assets")
-        .upload(`users/${Date.now()}-${file.name}`, file);
-
-      if (error) {
-        toast.error(error.message);
-
-        return;
-      }
-
-      const { data: publicData } = supabase.storage
-        .from("MaintTrack-Assets")
-        .getPublicUrl(data.path);
-
-      photoUrl = publicData.publicUrl;
-    }
-
     mutate({
-      fullname: validatedField.data.fullname,
-
-      email: validatedField.data.email,
-
-      phone_number: validatedField.data.phone_number,
-
-      password: validatedField.data.password,
-
-      role: validatedField.data.role,
-
-      address: validatedField.data.address,
-
-      photo_profile_url: photoUrl,
+      fullname: result.fullname,
+      email: result.email,
+      password: result.password,
+      role: result.role,
     });
   };
 
@@ -142,78 +89,59 @@ export function FormUsers() {
     <Card className="w-full">
       <CardHeader>
         <CardTitle>Form Pembuatan Pengguna</CardTitle>
-
         <CardDescription>Buat Pengguna anda Disini</CardDescription>
       </CardHeader>
-
       <form onSubmit={handleSubmit}>
         <CardContent>
           <FieldSet>
             <FieldGroup>
-              <Field data-invalid={Boolean(formError?.fullname)}>
-                <FieldLabel>Nama</FieldLabel>
-
-                <Input name="fullname" placeholder="Masukkan nama pengguna" />
-
-                {formError?.fullname && (
-                  <FieldError>{formError.fullname[0]}</FieldError>
-                )}
-              </Field>
-
-              <Field>
-                <FieldLabel>Email</FieldLabel>
-
-                <Input type="email" name="email" placeholder="Masukkan email" />
-              </Field>
-
-              <Field>
-                <FieldLabel>Nomor Kontak</FieldLabel>
-
-                <Input
-                  name="phone_number"
-                  placeholder="Masukkan nomor kontak"
-                />
-              </Field>
-
-              <Field>
-                <FieldLabel>Password</FieldLabel>
-
-                <Input
-                  type="password"
-                  name="password"
-                  placeholder="Masukkan password"
-                />
-              </Field>
-
-              <Field>
-                <FieldLabel>Role</FieldLabel>
-
-                <Select name="role">
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih role" />
-                  </SelectTrigger>
-
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-
-                    <SelectItem value="operator">Operator</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              <Field>
-                <FieldLabel>Alamat</FieldLabel>
-
-                <Textarea name="address" placeholder="Masukkan alamat" />
-              </Field>
-
-              <DropzoneUpload
-                id="photo"
-                name="photo"
-                label="Foto Pengguna"
-                pathName="users"
-                error={undefined}
+              <FieldInput
+                id="fullname"
+                name="fullname"
+                error={formError?.fullname?.[0]}
+                label="Nama"
+                type="text"
+                placeholder="Masukan nama pengguna"
               />
+              <FieldInput
+                id="email"
+                name="email"
+                error={formError?.email?.[0]}
+                label="Email"
+                type="email"
+                placeholder="Masukan email pengguna"
+              />
+              <FieldInput
+                id="password"
+                name="password"
+                error={formError?.password?.[0]}
+                label="Password"
+                type={checked ? "text" : "password"}
+                placeholder="*****"
+              />
+              <div className="flex gap-2 items-center">
+                <Checkbox
+                  onCheckedChange={(checked) => setChecked(checked === true)}
+                  checked={checked}
+                />
+                <Label>Tampilkan Password</Label>
+              </div>
+              <FieldSelect
+                id="role"
+                name="role"
+                label="Role"
+                error={formError?.role?.[0]}
+              >
+                {["admin", "operator"].map((role, index) => (
+                  <SelectItem
+                    value={role}
+                    key={`${role}-${index}`}
+                    className="capitalize"
+                  >
+                    {role}
+                  </SelectItem>
+                ))}
+              </FieldSelect>
             </FieldGroup>
           </FieldSet>
         </CardContent>
@@ -224,7 +152,6 @@ export function FormUsers() {
               Kembali
             </Button>
           </Link>
-
           <Button type="submit" disabled={loading}>
             {loading ? <Spinner /> : "Simpan"}
           </Button>
