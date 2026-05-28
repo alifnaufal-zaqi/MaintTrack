@@ -1,11 +1,22 @@
 "use client";
 
+import { resetPassword } from "@/app/actions/reset-password";
 import { ActionButton } from "@/components/commons/action-button";
+import { FieldInput } from "@/components/commons/field-input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { FieldGroup, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-
 import {
   Table,
   TableBody,
@@ -14,96 +25,78 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
+import { USERS_TABLE_HEADER } from "@/constants/users-constant";
+import { useMasterData } from "@/hooks/use-mater-data";
 import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
-import { createClient } from "@/lib/client";
-
-import { useQuery } from "@tanstack/react-query";
+import { User } from "@/types/users";
 import { Plus } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
-import { ChangeEvent } from "react";
+import { useRouter } from "next/navigation";
+import { ChangeEvent, useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-const USERS_TABLE_HEADER = ["No", "Nama", "Kontak", "Alamat", "Role", "Aksi"];
-
-type User = {
-  id: string;
-  user_id: string;
-  fullname: string;
-  phone_number: string;
-  address: string;
-  role: string;
-  photo_profile_url?: string;
-  created_at: string;
-};
-
 export function AssetsUsers() {
-  const supabase = createClient();
-
-  const { page, limit } = usePagination();
-
-  const { handleKeywordChange, keyword } = useSearch();
-
-  const { data: users = [], isLoading } = useQuery<User[]>({
-    queryKey: ["users", page, limit, keyword],
-
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .range((page - 1) * limit, page * limit - 1)
-        .order("created_at", {
-          ascending: false,
-        })
-        .ilike("fullname", `%${keyword}%`);
-
-      if (error) {
-        toast.error("Gagal", {
-          description: error.message,
-        });
-
-        return [];
-      }
-
-      return (data ?? []) as User[];
-    },
+  const router = useRouter();
+  const { page, limit, handleLimitChange, handlePageChange } = usePagination();
+  const { keyword, handleKeywordChange } = useSearch();
+  const { data: users, isLoading } = useMasterData<User[] | null>({
+    table: "user_profiles",
+    key: ["users", page, limit, keyword],
+    keyword,
+    offset: { from: (page - 1) * limit, to: page * limit - 1 },
   });
+  const [dialogState, setDialogState] = useState({ reset: false });
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const resetPasswordWithId = resetPassword.bind(null, selectedUser?.user_id);
+  const [state, action, loading] = useActionState(
+    resetPasswordWithId,
+    undefined
+  );
+
+  useEffect(() => {
+    if (state?.status === "success") {
+      toast.success("Berhasil", { description: state.message });
+      setDialogState((prev) => ({ ...prev, reset: false }));
+    }
+
+    if (state?.status === "error" && state?.message) {
+      toast.error("Gagal", { description: state.message });
+    }
+  }, [state, router]);
 
   return (
-    <div className="w-full space-y-6">
-      <h1 className="text-2xl font-bold text-primary">
+    <div className="w-full space-y-4">
+      <h1 className="text-xl text-primary font-bold">
         Manajemen Data Pengguna
       </h1>
 
-      {/* Search + Button */}
-      <Card className="p-3">
-        <div className="flex items-center gap-3">
-          <Input
-            type="search"
-            placeholder="Cari pengguna..."
-            className="flex-1"
-            onChange={(event: ChangeEvent<HTMLInputElement>) =>
-              handleKeywordChange(event.target.value)
-            }
-          />
+      <Card className="p-2 flex flex-row gap-2 items-center">
+        <Input
+          type="search"
+          placeholder="Cari data pengguna berdasarkan nama"
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            handleKeywordChange(event.target.value)
+          }
+        />
 
-          <Link href="/dashboard/admin/users/create">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Buat Pengguna
-            </Button>
-          </Link>
-        </div>
+        <Link href="/dashboard/admin/users/create">
+          <Button>
+            <span>
+              <Plus />
+            </span>
+            Tambah Pengguna
+          </Button>
+        </Link>
       </Card>
 
-      {/* Table */}
-      <Card className="overflow-hidden p-0">
-        <Table>
-          <TableHeader className="bg-muted">
+      <Card className="p-0">
+        <Table className="w-full rounded-lg overflow-hidden">
+          <TableHeader className="bg-muted sticky top-0 z-10">
             <TableRow>
               {USERS_TABLE_HEADER.map((head) => (
-                <TableHead key={head} className="px-6 py-4">
+                <TableHead key={head} className="capitalize px-6 py-3">
                   {head}
                 </TableHead>
               ))}
@@ -111,51 +104,104 @@ export function AssetsUsers() {
           </TableHeader>
 
           <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={USERS_TABLE_HEADER.length} className="h-24">
-                  <div className="flex flex-col items-center gap-2">
-                    <Spinner />
-
-                    <span>Memuat...</span>
-                  </div>
+            {users?.map((user, index) => (
+              <TableRow key={user.id}>
+                <TableCell>
+                  <Image
+                    alt={user.fullname}
+                    src={user.photo_profile_url}
+                    width={0}
+                    height={0}
+                    className="w-12 h-12 mx-4 rounded-full border"
+                  />
+                </TableCell>
+                <TableCell className="px-6 py-3">{user.fullname}</TableCell>
+                <TableCell className="px-6 py-3">{user.email}</TableCell>
+                <TableCell className="px-6 py-3">{user.phone_number}</TableCell>
+                <TableCell className="px-6 py-3">
+                  {user.address === null ? "-" : user.address}
+                </TableCell>
+                <TableCell className="px-6 py-3">{user.role}</TableCell>
+                <TableCell className="px-6 py-3">
+                  <ActionButton
+                    isResetPassword
+                    onResetPasswordClick={() => {
+                      setSelectedUser(user);
+                      setDialogState((prev) => ({ ...prev, reset: true }));
+                    }}
+                  />
                 </TableCell>
               </TableRow>
-            ) : users.length > 0 ? (
-              users.map((user, index) => (
-                <TableRow key={user.id}>
-                  <TableCell className="px-6 py-4">{index + 1}</TableCell>
+            ))}
 
-                  <TableCell className="px-6 py-4">{user.fullname}</TableCell>
-
-                  <TableCell className="px-6 py-4">
-                    {user.phone_number}
-                  </TableCell>
-
-                  <TableCell className="px-6 py-4">{user.address}</TableCell>
-
-                  <TableCell className="px-6 py-4 capitalize">
-                    {user.role}
-                  </TableCell>
-
-                  <TableCell className="px-6 py-4">
-                    <ActionButton isDelete isUpdate />
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
+            {users?.length === 0 && !isLoading && (
               <TableRow>
                 <TableCell
                   colSpan={USERS_TABLE_HEADER.length}
-                  className="h-32 text-center"
+                  className="h-24 text-center"
                 >
                   Data belum tersedia
+                </TableCell>
+              </TableRow>
+            )}
+
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={USERS_TABLE_HEADER.length} className="h-24">
+                  <div className="flex flex-col gap-2 justify-center items-center w-full">
+                    <Spinner />
+                    <span>Memuat...</span>
+                  </div>
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </Card>
+
+      <Dialog
+        open={dialogState.reset}
+        onOpenChange={(value) =>
+          setDialogState((prev) => ({ ...prev, reset: value }))
+        }
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Ubah password pengguna anda disini
+            </DialogDescription>
+          </DialogHeader>
+          <form action={action}>
+            <FieldSet>
+              <FieldGroup>
+                <FieldInput
+                  id="password"
+                  name="newPassword"
+                  error={state?.errors?.newPassword?.[0]}
+                  label="Password Baru"
+                  type="password"
+                  placeholder="*****"
+                />
+                <FieldInput
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  error={state?.errors?.confirmPassword?.[0]}
+                  label="Konfirmasi Password"
+                  type="password"
+                  placeholder="*****"
+                />
+              </FieldGroup>
+            </FieldSet>
+            <DialogFooter className="mt-4">
+              <DialogClose asChild>
+                <Button variant={"outline"}>Tutup</Button>
+              </DialogClose>
+              <Button type="submit">{loading ? <Spinner /> : "Edit"}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

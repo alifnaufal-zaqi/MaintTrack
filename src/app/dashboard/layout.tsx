@@ -20,11 +20,15 @@ export default async function DashboardLayout({
   const profileData = JSON.parse(cookiesStore.get("profile")?.value ?? "{}");
   const profile: Profile = {
     id: profileData.id,
+    userId: profileData.user_id,
     fullname: profileData.fullname,
+    email: profileData.email,
     address: profileData.address,
     phoneNumber: profileData.phone_number,
     photoProfileUrl: profileData.photo_profile_url,
+    photoProfilePath: profileData.photo_profile_path,
     role: profileData.role,
+    createdAt: profileData.created_at,
   };
 
   return (

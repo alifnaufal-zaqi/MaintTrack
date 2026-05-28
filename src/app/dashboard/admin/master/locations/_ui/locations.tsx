@@ -39,6 +39,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { locationTypeSelect } from "@/constants/location-type";
 import { LOCATIONS_TABLE_HEADER } from "@/constants/locations-constant";
+import { useMasterData } from "@/hooks/use-mater-data";
 import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
 import { createClient } from "@/lib/client";
@@ -64,24 +65,11 @@ export function Location() {
   });
   const [formError, setFormError] = useState<FormLocation | null>(null);
   const { keyword, handleKeywordChange } = useSearch();
-  const { data: locations, isLoading } = useQuery<LocationType[] | null>({
-    queryKey: ["locations", page, limit, keyword],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("locations")
-        .select("*")
-        .range((page - 1) * limit, page * limit - 1)
-        .order("created_at")
-        .ilike("name", `%${keyword}%`);
-
-      if (error) {
-        toast.error("Gagal", {
-          description: error.message,
-        });
-      }
-
-      return data;
-    },
+  const { data: locations, isLoading } = useMasterData<LocationType[]>({
+    table: "locations",
+    keyword,
+    key: ["locations", page, limit, keyword],
+    offset: { from: (page - 1) * limit, to: page * limit - 1 },
   });
   const { mutate: mutationDelete, isPending: loadingDelete } = useMutation({
     mutationFn: async (id: string) => {

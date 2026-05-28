@@ -14,6 +14,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
@@ -36,26 +43,58 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useState } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 
-export function ListAssetsPage() {
+export function ListAssetsPage_Operator() {
   const supabase = createClient();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { handleKeywordChange, keyword } = useSearch();
   const { limit, page } = usePagination();
-  const [dialogState, setDialogState] = useState<DialogState>({
-    delete: false,
-    update: false,
-  });
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedLocation, setSelectedLocation] = useState<string>("");
   const [selectedAsset, setSelectedAsset] = useState<AssetPreview | null>();
-  const { isLoading, data: assets } = useQuery<AssetPreview[] | null>({
-    queryKey: ["assets", page, limit, keyword],
+  // fetch categories for filter
+  const { data: categories } = useQuery({
+    queryKey: ["categories"],
     queryFn: async () => {
-      const { error, data } = await supabase
-        .from("assets")
-        .select(
-          `
+      const { data, error } = await supabase
+        .from("categories")
+        .select(`id,name`)
+        .order("name");
+
+      if (error) {
+        toast.error("Gagal memuat kategori", { description: error.message });
+      }
+
+      return data as Array<{ id: string; name: string }> | null;
+    },
+  });
+
+  // fetch locations for filter
+  const { data: locations } = useQuery({
+    queryKey: ["locations"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("locations")
+        .select(`id,name`)
+        .order("name");
+
+      if (error) {
+        toast.error("Gagal memuat lokasi", { description: error.message });
+      }
+
+      return data as Array<{ id: string; name: string }> | null;
+    },
+  });
+
+  const { isLoading, data: assets } = useQuery<AssetPreview[] | null>({
+    queryKey: ["assets", page, limit, keyword, selectedCategory, selectedLocation],
+    queryFn: async () => {
+      let query = supabase.from("assets").select(
+        `
           id,
           name,
           category:categories (
@@ -71,13 +110,27 @@ export function ListAssetsPage() {
             name
           ),
           status,
+          qr_tag,
           asset_image_url,
           asset_image_path
         `
-        )
-        .range((page - 1) * limit, page * limit - 1)
-        .order("created_at")
-        .ilike("name", `%${keyword}%`);
+      );
+
+      if (keyword) {
+        query = query.ilike("name", `%${keyword}%`);
+      }
+
+      if (selectedCategory) {
+        query = query.eq("category_id", selectedCategory);
+      }
+
+      if (selectedLocation) {
+        query = query.eq("current_location_id", selectedLocation);
+      }
+
+      query = query.order("created_at").range((page - 1) * limit, page * limit - 1);
+
+      const { data, error } = await query;
 
       if (error) {
         toast.error("Gagal", { description: error.message });
@@ -86,34 +139,40 @@ export function ListAssetsPage() {
       return data as AssetPreview[] | null;
     },
   });
-  const { mutate: mutationDelete, isPending: deleteLoading } = useMutation({
-    mutationFn: async (asset: AssetPreview) => {
-      const result = await removeFileFromStorage(asset.asset_image_path);
+  
 
-      if (!result) new Error("Gagal menghapus file");
-
-      const { error } = await supabase
-        .from("assets")
-        .delete()
-        .eq("id", asset.id);
-
-      if (error) throw error;
-    },
-    onError: (error) => toast.error("Gagal", { description: error.message }),
-    onSuccess: () => {
-      setDialogState((prev) => ({ ...prev, delete: false }));
-      queryClient.invalidateQueries({ queryKey: ["assets"] });
-      toast.success("Berhasil", {
-        description: "Berhasil menghapus data aset",
+  const downloadQrCode = (tag: string, name: string) => {
+    try {
+      const svgMarkup = renderToStaticMarkup(
+        <QRCodeSVG value={tag} size={256} />
+      );
+      const blob = new Blob([svgMarkup], {
+        type: "image/svg+xml;charset=utf-8",
       });
-    },
-  });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${name.replace(/\s+/g, "-").toLowerCase()}-qr.svg`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Berhasil mengunduh QR", {
+        description: "QR code telah diunduh sebagai file SVG.",
+      });
+    } catch (error) {
+      toast.error("Gagal mengunduh QR", {
+        description:
+          error instanceof Error ? error.message : "Terjadi kesalahan.",
+      });
+    }
+  };
 
   return (
     <div className="w-full space-y-4">
       <h1 className="text-xl text-primary font-bold">Manajemen Data Aset</h1>
 
-      <Card className="p-2 flex gap-2 flex-row">
+      <Card className="p-2 flex gap-2 flex-row items-center">
         <Input
           type="search"
           placeholder="Cari data aset berdasarkan nama"
@@ -122,14 +181,42 @@ export function ListAssetsPage() {
             handleKeywordChange(event.target.value)
           }
         />
-        <Link href={"/dashboard/admin/master/assets/create"}>
-          <Button>
-            <span>
-              <Plus />
-            </span>
-            Tambah aset
-          </Button>
-        </Link>
+
+        <div className="flex gap-2">
+          <Select
+            value={selectedCategory}
+            onValueChange={(val) => setSelectedCategory(val)}
+          >
+            <SelectTrigger size="sm" className="w-44">
+              <SelectValue placeholder="Kategori" />
+            </SelectTrigger>
+            <SelectContent id="category">
+              <SelectItem value="all">Semua</SelectItem>
+              {categories?.map((category: any) => (
+                <SelectItem key={category.id} value={String(category.id || 'unknown')}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={selectedLocation}
+            onValueChange={(val) => setSelectedLocation(val)}
+          >
+            <SelectTrigger size="sm" className="w-44">
+              <SelectValue placeholder="Lokasi" />
+            </SelectTrigger>
+            <SelectContent id="location">
+              <SelectItem value="all">Semua</SelectItem>
+              {locations?.map((location: any) => (
+                <SelectItem key={location.id} value={String(location.id || 'unknown')}>
+                  {location.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </Card>
 
       <Card className="p-0">
@@ -168,15 +255,17 @@ export function ListAssetsPage() {
                 </TableCell>
                 <TableCell className="px-6 py-3">
                   <ActionButton
-                    isUpdate
-                    isDelete
                     isDetail
+                    isDownloadQr
                     onDetailClick={() => {
-                      router.push(`/dashboard/admin/master/assets/${asset.id}`);
+                      router.push(`/dashboard/operator/assets/${asset.id}`);
                     }}
-                    onDeleteClick={() => {
-                      setSelectedAsset(asset);
-                      setDialogState((prev) => ({ ...prev, delete: true }));
+                    onDownloadQrClick={() => {
+                      if (!asset.qr_tag) {
+                        toast.error("QR tag tidak tersedia");
+                        return;
+                      }
+                      downloadQrCode(asset.qr_tag, asset.name);
                     }}
                   />
                 </TableCell>
@@ -205,33 +294,6 @@ export function ListAssetsPage() {
           </TableBody>
         </Table>
       </Card>
-
-      <Dialog
-        open={dialogState.delete}
-        onOpenChange={(value) =>
-          setDialogState((prev) => ({ ...prev, delete: value }))
-        }
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Peringatan</DialogTitle>
-            <DialogDescription>
-              Apakah anda yakin ingin menghapus kategori {selectedAsset?.name}?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant={"outline"}>Batal</Button>
-            </DialogClose>
-            <Button
-              variant={"destructive"}
-              onClick={() => mutationDelete(selectedAsset!)}
-            >
-              {deleteLoading ? <Spinner /> : "Ya"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

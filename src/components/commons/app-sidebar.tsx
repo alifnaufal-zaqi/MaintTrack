@@ -33,11 +33,20 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { ChevronRight, EllipsisVertical, LogOut } from "lucide-react";
+import { ChevronRight, EllipsisVertical, LogOut, User } from "lucide-react";
 import { logout } from "@/app/actions/logout";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function AppSidebar({ profile }: { profile: Profile }) {
+  const router = useRouter();
   const { isMobile } = useSidebar();
+  const setProfile = useAuthStore((state) => state.setProfile);
+
+  useEffect(() => {
+    setProfile(profile);
+  }, [profile]);
 
   return (
     <Sidebar collapsible="icon">
@@ -167,7 +176,17 @@ export default function AppSidebar({ profile }: { profile: Profile }) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem onClick={() => logout()}>
+                  <DropdownMenuItem
+                    onClick={() => router.push("/dashboard/profiles")}
+                  >
+                    <User />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() => logout()}
+                  >
                     <LogOut />
                     Logout
                   </DropdownMenuItem>

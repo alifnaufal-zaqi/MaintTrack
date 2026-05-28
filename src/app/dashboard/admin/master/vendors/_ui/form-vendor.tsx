@@ -170,18 +170,13 @@ export function FormVendor() {
               </Field>
             </FieldGroup>
             <FieldGroup className="h-full">
-              <Field data-invalid={Boolean(formError?.logo)} className="h-full">
-                <FieldLabel htmlFor="logo">Logo Vendor</FieldLabel>
-                <DropzoneUpload
-                  id="logo"
-                  name="logo"
-                  pathName="vendor"
-                  error={formError?.logo?.[0]}
-                />
-                {formError?.logo && (
-                  <FieldError>{formError.logo[0]}</FieldError>
-                )}
-              </Field>
+              <DropzoneUpload
+                id="logo"
+                name="logo"
+                pathName="vendor"
+                label="Logo Vendor"
+                error={formError?.logo?.[0]}
+              />
             </FieldGroup>
           </FieldSet>
         </CardContent>

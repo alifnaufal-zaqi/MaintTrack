@@ -68,7 +68,7 @@ export const SIDEBAR_MENU: SidebarMenu = {
     {
       title: "Data Maintenance",
       icon: Wrench,
-      href: "/dashboard/admin/maintenance",
+      href: "/dashboard/admin/maintenances",
     },
 
     {
@@ -81,11 +81,6 @@ export const SIDEBAR_MENU: SidebarMenu = {
       title: "Pengguna",
       icon: Users,
       href: "/dashboard/admin/users",
-    },
-    {
-      title: "Laporan",
-      icon: FileBarChart,
-      href: "/dashboard/admin/reports",
     },
   ],
 
@@ -106,19 +101,13 @@ export const SIDEBAR_MENU: SidebarMenu = {
     {
       title: "Data Maintenance",
       icon: Wrench,
-      href: "/dashboard/operator/maintenance",
+      href: "/dashboard/operator/maintenances",
     },
 
     {
       title: "Data Movement",
       icon: Repeat,
       href: "/dashboard/operator/movements",
-    },
-
-    {
-      title: "History",
-      icon: History,
-      href: "/dashboard/operator/history",
     },
   ],
 };

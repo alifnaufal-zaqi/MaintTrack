@@ -4,11 +4,13 @@ import {
 } from "@/hooks/use-supabase-upload";
 import { Dropzone, DropzoneContent, DropzoneEmptyState } from "../dropzone";
 import { cn } from "@/lib/utils";
+import { Field, FieldError, FieldLabel } from "../ui/field";
 
 type DropzoneUploadProps = {
   pathName: string;
   name: string;
   id: string;
+  label: string;
   error: string | undefined;
   files?: UseSupabaseUploadReturn["files"];
 };
@@ -16,6 +18,7 @@ type DropzoneUploadProps = {
 export function DropzoneUpload({
   pathName,
   name,
+  label,
   id,
   error,
 }: DropzoneUploadProps) {
@@ -28,7 +31,8 @@ export function DropzoneUpload({
   });
 
   return (
-    <div className="p-1 space-y-2 h-full">
+    <Field data-invalid={Boolean(error)}>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
       <Dropzone
         {...props}
         className={cn("h-full flex flex-col justify-center", {
@@ -40,6 +44,7 @@ export function DropzoneUpload({
         <DropzoneContent />
         <DropzoneEmptyState />
       </Dropzone>
-    </div>
+      {error && <FieldError>{error}</FieldError>}
+    </Field>
   );
 }
