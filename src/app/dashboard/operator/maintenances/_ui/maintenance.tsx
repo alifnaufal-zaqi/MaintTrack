@@ -1,17 +1,11 @@
 "use client";
 
 import { useState, ChangeEvent } from "react";
-
 import { Card } from "@/components/ui/card";
-
 import { Input } from "@/components/ui/input";
-
 import { Spinner } from "@/components/ui/spinner";
-
 import { Badge } from "@/components/ui/badge";
-
 import { Button } from "@/components/ui/button";
-
 import {
   Select,
   SelectContent,
@@ -19,14 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 import {
   Table,
   TableBody,
@@ -35,17 +27,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
 import usePagination from "@/hooks/use-pagination";
-
 import useSearch from "@/hooks/use-search";
-
 import { createClient } from "@/lib/client";
-
 import { useQuery } from "@tanstack/react-query";
-
 import { Filter, MoreVertical } from "lucide-react";
-
 import { toast } from "sonner";
 
 const MAINTENANCE_TABLE_HEADER = [
@@ -61,34 +47,22 @@ const MAINTENANCE_TABLE_HEADER = [
 
 type MaintenanceType = {
   id: string;
-
   asset_name: string;
-
   maintenance_date: string;
-
   maintenance_type: string;
-
   pic: string;
-
   progress_status: string;
-
   description: string;
-
   created_at: string;
 };
 
 export function Maintenance() {
   const supabase = createClient();
-
   const { page, limit } = usePagination();
-
   const { keyword, handleKeywordChange } = useSearch();
-
   const [type, setType] = useState("all");
-
   const { data: maintenances = [], isLoading } = useQuery<MaintenanceType[]>({
     queryKey: ["maintenances", page, limit, keyword, type],
-
     queryFn: async () => {
       let query = supabase
         .from("maintenance_logs")
@@ -157,15 +131,11 @@ export function Maintenance() {
             <Select value={type} onValueChange={setType}>
               <SelectTrigger className="w-[220px]">
                 <Filter className="mr-2 h-4 w-4" />
-
                 <SelectValue placeholder="Filter tipe maintenance" />
               </SelectTrigger>
-
               <SelectContent>
                 <SelectItem value="all">Semua</SelectItem>
-
                 <SelectItem value="Rutin">Rutin</SelectItem>
-
                 <SelectItem value="Perbaikan">Perbaikan</SelectItem>
               </SelectContent>
             </Select>
@@ -225,8 +195,8 @@ export function Maintenance() {
                         maintenance.progress_status === "Selesai"
                           ? "default"
                           : maintenance.progress_status === "Proses"
-                            ? "secondary"
-                            : "outline"
+                          ? "secondary"
+                          : "outline"
                       }
                     >
                       {maintenance.progress_status}

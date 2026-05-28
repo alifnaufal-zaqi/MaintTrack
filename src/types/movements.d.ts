@@ -1,10 +1,19 @@
 export type Movement = {
   id: string;
-  asset_id: string;
-  from_location_id: string;
-  to_location_id: string;
+  asset: {
+    name: string;
+    asset_image_url: string;
+  };
+  from_location: {
+    name: string;
+  };
+  to_location: {
+    name: string;
+  };
   movement_date: string;
-  pic_name: string;
+  pic: {
+    fullname: string;
+  };
   notes: string;
   created_at: string;
 };

@@ -171,9 +171,9 @@ export function ListAssetsPage() {
                     isUpdate
                     isDelete
                     isDetail
-                    onDetailClick={() => {
-                      router.push(`/dashboard/admin/master/assets/${asset.id}`);
-                    }}
+                    onDetailClick={() =>
+                      router.push(`/dashboard/admin/master/assets/${asset.id}`)
+                    }
                     onDeleteClick={() => {
                       setSelectedAsset(asset);
                       setDialogState((prev) => ({ ...prev, delete: true }));
