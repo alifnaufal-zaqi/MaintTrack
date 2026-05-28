@@ -1,17 +1,16 @@
 "use client";
 
-import { useState, ChangeEvent } from "react";
-
-import { Card } from "@/components/ui/card";
-
-import { Input } from "@/components/ui/input";
-
-import { Spinner } from "@/components/ui/spinner";
-
 import { Badge } from "@/components/ui/badge";
-
 import { Button } from "@/components/ui/button";
-
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -19,14 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
 import {
   Table,
   TableBody,
@@ -35,49 +26,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
+import { MAINTENANCE_TABLE_HEADER } from "@/constants/maintenance-constant";
 import usePagination from "@/hooks/use-pagination";
-
 import useSearch from "@/hooks/use-search";
-
 import { createClient } from "@/lib/client";
-
+import { Maintenance } from "@/types/maintenance";
 import { useQuery } from "@tanstack/react-query";
-
 import { Filter, MoreVertical } from "lucide-react";
-
+import { ChangeEvent, useState } from "react";
 import { toast } from "sonner";
 
-const MAINTENANCE_TABLE_HEADER = [
-  "No",
-  "Nama Asset",
-  "Tanggal",
-  "Tipe Maintenance",
-  "PIC",
-  "Status Progres",
-  "Keterangan",
-  "Aksi",
-];
-
-type MaintenanceType = {
-  id: string;
-
-  asset_name: string;
-
-  maintenance_date: string;
-
-  maintenance_type: string;
-
-  pic: string;
-
-  progress_status: string;
-
-  description: string;
-
-  created_at: string;
-};
-
-export function Maintenance() {
+export function MaintenanceOperator() {
   const supabase = createClient();
 
   const { page, limit } = usePagination();
@@ -86,7 +45,7 @@ export function Maintenance() {
 
   const [type, setType] = useState("all");
 
-  const { data: maintenances = [], isLoading } = useQuery<MaintenanceType[]>({
+  const { data: maintenances, isLoading } = useQuery<Maintenance[] | null>({
     queryKey: ["maintenances", page, limit, keyword, type],
 
     queryFn: async () => {
@@ -109,11 +68,9 @@ export function Maintenance() {
         toast.error("Gagal", {
           description: error.message,
         });
-
-        return [];
       }
 
-      return data ?? [];
+      return data;
     },
   });
 
@@ -126,7 +83,7 @@ export function Maintenance() {
       .eq("id", id);
 
     if (error) {
-      toast.error("Gagal update status", {
+      toast.error("Gagal", {
         description: error.message,
       });
 
@@ -134,52 +91,46 @@ export function Maintenance() {
     }
 
     toast.success("Berhasil update status");
+
     window.location.reload();
   };
 
   return (
-    <div className="w-full space-y-6">
-      <h1 className="text-2xl font-bold text-primary">Manajemen Maintenance</h1>
+    <div className="w-full space-y-4">
+      <h1 className="text-xl text-primary font-bold">Manajemen Maintenance</h1>
 
-      {/* SEARCH + FILTER */}
-      <Card className="p-4">
-        <div className="flex flex-col lg:flex-row gap-3">
-          <Input
-            type="search"
-            placeholder="Cari data maintenance..."
-            className="flex-1"
-            onChange={(event: ChangeEvent<HTMLInputElement>) =>
-              handleKeywordChange(event.target.value)
-            }
-          />
+      <Card className="p-2 flex flex-row gap-2 items-center">
+        <Input
+          type="search"
+          placeholder="Cari data maintenance..."
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            handleKeywordChange(event.target.value)
+          }
+        />
 
-          <div className="flex gap-3">
-            <Select value={type} onValueChange={setType}>
-              <SelectTrigger className="w-[220px]">
-                <Filter className="mr-2 h-4 w-4" />
+        <Select value={type} onValueChange={setType}>
+          <SelectTrigger className="w-[220px]">
+            <Filter className="mr-2 h-4 w-4" />
 
-                <SelectValue placeholder="Filter tipe maintenance" />
-              </SelectTrigger>
+            <SelectValue placeholder="Filter tipe maintenance" />
+          </SelectTrigger>
 
-              <SelectContent>
-                <SelectItem value="all">Semua</SelectItem>
+          <SelectContent>
+            <SelectItem value="all">Semua</SelectItem>
 
-                <SelectItem value="Rutin">Rutin</SelectItem>
+            <SelectItem value="Rutin">Rutin</SelectItem>
 
-                <SelectItem value="Perbaikan">Perbaikan</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+            <SelectItem value="Perbaikan">Perbaikan</SelectItem>
+          </SelectContent>
+        </Select>
       </Card>
 
-      {/* TABLE */}
-      <Card className="overflow-hidden p-0">
-        <Table>
-          <TableHeader className="bg-muted">
+      <Card className="p-0">
+        <Table className="w-full rounded-lg overflow-hidden">
+          <TableHeader className="bg-muted sticky top-0 z-10">
             <TableRow>
               {MAINTENANCE_TABLE_HEADER.map((head) => (
-                <TableHead key={head} className="px-6 py-4">
+                <TableHead key={head} className="capitalize px-6 py-3">
                   {head}
                 </TableHead>
               ))}
@@ -187,101 +138,107 @@ export function Maintenance() {
           </TableHeader>
 
           <TableBody>
-            {isLoading ? (
+            {maintenances?.map((maintenance, index) => (
+              <TableRow key={maintenance.id}>
+                {/* NO */}
+                <TableCell className="px-6 py-3">{index + 1}</TableCell>
+
+                {/* ASSET */}
+                <TableCell className="px-6 py-3">
+                  {maintenance.asset_name}
+                </TableCell>
+
+                {/* TANGGAL */}
+                <TableCell className="px-6 py-3">
+                  {maintenance.maintenance_date}
+                </TableCell>
+
+                {/* TIPE */}
+                <TableCell className="px-6 py-3">
+                  {maintenance.maintenance_type}
+                </TableCell>
+
+                {/* STATUS */}
+                <TableCell className="px-6 py-3">
+                  <Badge
+                    variant={
+                      maintenance.progress_status === "Selesai"
+                        ? "default"
+                        : maintenance.progress_status === "Proses"
+                          ? "secondary"
+                          : "outline"
+                    }
+                  >
+                    {maintenance.progress_status}
+                  </Badge>
+                </TableCell>
+
+                {/* KETERANGAN */}
+                <TableCell className="px-6 py-3">
+                  {maintenance.description}
+                </TableCell>
+
+                {/* AKSI */}
+                <TableCell className="px-6 py-3">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" variant="ghost">
+                        <MoreVertical className="w-5 h-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() =>
+                          handleUpdateStatus(maintenance.id, "Planning")
+                        }
+                      >
+                        Planning
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        onClick={() =>
+                          handleUpdateStatus(maintenance.id, "Proses")
+                        }
+                      >
+                        Proses
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        onClick={() =>
+                          handleUpdateStatus(maintenance.id, "Selesai")
+                        }
+                      >
+                        Selesai
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+
+            {maintenances?.length === 0 && !isLoading && (
+              <TableRow>
+                <TableCell
+                  colSpan={MAINTENANCE_TABLE_HEADER.length}
+                  className="h-24 text-center"
+                >
+                  Data belum tersedia
+                </TableCell>
+              </TableRow>
+            )}
+
+            {isLoading && (
               <TableRow>
                 <TableCell
                   colSpan={MAINTENANCE_TABLE_HEADER.length}
                   className="h-24"
                 >
-                  <div className="flex flex-col items-center gap-2">
+                  <div className="flex flex-col gap-2 justify-center items-center w-full">
                     <Spinner />
 
                     <span>Memuat...</span>
                   </div>
-                </TableCell>
-              </TableRow>
-            ) : maintenances.length > 0 ? (
-              maintenances.map((maintenance, index) => (
-                <TableRow key={maintenance.id}>
-                  <TableCell className="px-6 py-4">{index + 1}</TableCell>
-
-                  <TableCell className="px-6 py-4">
-                    {maintenance.asset_name}
-                  </TableCell>
-
-                  <TableCell className="px-6 py-4">
-                    {maintenance.maintenance_date}
-                  </TableCell>
-
-                  <TableCell className="px-6 py-4">
-                    {maintenance.maintenance_type}
-                  </TableCell>
-
-                  <TableCell className="px-6 py-4">{maintenance.pic}</TableCell>
-
-                  <TableCell className="px-6 py-4">
-                    <Badge
-                      variant={
-                        maintenance.progress_status === "Selesai"
-                          ? "default"
-                          : maintenance.progress_status === "Proses"
-                            ? "secondary"
-                            : "outline"
-                      }
-                    >
-                      {maintenance.progress_status}
-                    </Badge>
-                  </TableCell>
-
-                  <TableCell className="px-6 py-4">
-                    {maintenance.description}
-                  </TableCell>
-
-                  {/* AKSI */}
-                  <TableCell className="px-6 py-4">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button size="icon" variant="ghost">
-                          <MoreVertical className="w-5 h-5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleUpdateStatus(maintenance.id, "Planning")
-                          }
-                        >
-                          Planning
-                        </DropdownMenuItem>
-
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleUpdateStatus(maintenance.id, "Proses")
-                          }
-                        >
-                          Proses
-                        </DropdownMenuItem>
-
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleUpdateStatus(maintenance.id, "Selesai")
-                          }
-                        >
-                          Selesai
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={MAINTENANCE_TABLE_HEADER.length}
-                  className="h-32 text-center"
-                >
-                  Data maintenance belum tersedia
                 </TableCell>
               </TableRow>
             )}

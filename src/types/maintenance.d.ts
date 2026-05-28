@@ -1,10 +1,10 @@
-export type Vendor = {
+export type Maintenance = {
   id: string;
-  assets_id;
+  asset_name: string;
   maintenance_date: string;
   maintenance_type: string;
-  cost: string;
-  notes: string;
-  created_by: string;
+  pic: string;
+  progress_status: string;
+  description: string;
   created_at: string;
 };

@@ -42,7 +42,7 @@ export function FormLocations() {
   const [formError, setFormError] = useState<FormLocation | null>(null);
   const { mutate, isPending: loading } = useMutation({
     mutationFn: async (
-      location: Pick<Location, "name" | "type" | "description">
+      location: Pick<Location, "name" | "type" | "description">,
     ) => {
       const { error } = await supabase
         .from("locations")
