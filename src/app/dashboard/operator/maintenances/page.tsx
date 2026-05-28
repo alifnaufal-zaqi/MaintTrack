@@ -1,11 +1,11 @@
-import { Metadata } from "next";
+import type { Metadata } from "next";
 
-import { MaintenanceOperator } from "./_ui/maintenance";
+import { Maintenance } from "./_ui/maintenance";
 
 export const metadata: Metadata = {
   title: "MaintTrack | Maintenance",
 };
 
 export default function MaintenancePage() {
-  return <MaintenanceOperator />;
+  return <Maintenance />;
 }
