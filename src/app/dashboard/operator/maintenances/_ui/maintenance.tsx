@@ -1,16 +1,15 @@
 "use client";
 
+import { ChangeEvent, useState } from "react";
+
+import Link from "next/link";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import {
   Select,
   SelectContent,
@@ -18,6 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 import {
   Table,
   TableBody,
@@ -26,17 +33,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { MAINTENANCE_TABLE_HEADER } from "@/constants/maintenance-constant";
+
+import { MAINTENANCE_TABLE_HEADER } from "@/constants/operator-maintenance-constant";
+
 import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
+
 import { createClient } from "@/lib/client";
-import { Maintenance } from "@/types/maintenance";
+
+import type { Maintenance } from "@/types/operator-maintenance";
+
 import { useQuery } from "@tanstack/react-query";
-import { Filter, MoreVertical } from "lucide-react";
-import { ChangeEvent, useState } from "react";
+
+import { Filter, MoreVertical, QrCode } from "lucide-react";
+
 import { toast } from "sonner";
 
-export function MaintenanceOperator() {
+export function Maintenance() {
   const supabase = createClient();
 
   const { page, limit } = usePagination();
@@ -90,7 +103,9 @@ export function MaintenanceOperator() {
       return;
     }
 
-    toast.success("Berhasil update status");
+    toast.success("Berhasil", {
+      description: "Status maintenance berhasil diperbarui",
+    });
 
     window.location.reload();
   };
@@ -110,9 +125,9 @@ export function MaintenanceOperator() {
 
         <Select value={type} onValueChange={setType}>
           <SelectTrigger className="w-[220px]">
-            <Filter className="mr-2 h-4 w-4" />
+            <Filter className="w-4 h-4 mr-2" />
 
-            <SelectValue placeholder="Filter tipe maintenance" />
+            <SelectValue placeholder="Filter maintenance" />
           </SelectTrigger>
 
           <SelectContent>
@@ -123,14 +138,24 @@ export function MaintenanceOperator() {
             <SelectItem value="Perbaikan">Perbaikan</SelectItem>
           </SelectContent>
         </Select>
+
+        <Link href="/dashboard/operator/maintenances/scan">
+          <Button>
+            <QrCode className="w-4 h-4 mr-2" />
+            Scan QR
+          </Button>
+        </Link>
       </Card>
 
       <Card className="p-0">
         <Table className="w-full rounded-lg overflow-hidden">
           <TableHeader className="bg-muted sticky top-0 z-10">
             <TableRow>
-              {MAINTENANCE_TABLE_HEADER.map((head) => (
-                <TableHead key={head} className="capitalize px-6 py-3">
+              {MAINTENANCE_TABLE_HEADER.map((head, index) => (
+                <TableHead
+                  key={`${head}-${index}`}
+                  className="capitalize px-6 py-3"
+                >
                   {head}
                 </TableHead>
               ))}
@@ -140,25 +165,20 @@ export function MaintenanceOperator() {
           <TableBody>
             {maintenances?.map((maintenance, index) => (
               <TableRow key={maintenance.id}>
-                {/* NO */}
                 <TableCell className="px-6 py-3">{index + 1}</TableCell>
 
-                {/* ASSET */}
                 <TableCell className="px-6 py-3">
                   {maintenance.asset_name}
                 </TableCell>
 
-                {/* TANGGAL */}
                 <TableCell className="px-6 py-3">
                   {maintenance.maintenance_date}
                 </TableCell>
 
-                {/* TIPE */}
                 <TableCell className="px-6 py-3">
                   {maintenance.maintenance_type}
                 </TableCell>
 
-                {/* STATUS */}
                 <TableCell className="px-6 py-3">
                   <Badge
                     variant={
@@ -173,12 +193,10 @@ export function MaintenanceOperator() {
                   </Badge>
                 </TableCell>
 
-                {/* KETERANGAN */}
                 <TableCell className="px-6 py-3">
                   {maintenance.description}
                 </TableCell>
 
-                {/* AKSI */}
                 <TableCell className="px-6 py-3">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -223,7 +241,7 @@ export function MaintenanceOperator() {
                   colSpan={MAINTENANCE_TABLE_HEADER.length}
                   className="h-24 text-center"
                 >
-                  Data belum tersedia
+                  Data maintenance belum tersedia
                 </TableCell>
               </TableRow>
             )}
