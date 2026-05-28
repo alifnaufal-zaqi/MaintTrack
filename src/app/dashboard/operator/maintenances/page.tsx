@@ -1,4 +1,4 @@
-import { Metadata } from "next";
+import type { Metadata } from "next";
 
 import { Maintenance } from "./_ui/maintenance";
 

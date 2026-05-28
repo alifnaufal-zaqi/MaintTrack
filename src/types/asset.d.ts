@@ -57,4 +57,6 @@ type AssetPreview = Pick<
   | "status"
   | "asset_image_url"
   | "asset_image_path"
->;
+> & {
+  qr_tag?: string;
+};
