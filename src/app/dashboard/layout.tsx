@@ -1,14 +1,22 @@
 import AppSidebar from "@/components/commons/app-sidebar";
 import { DarkModeToggle } from "@/components/commons/dark-mode-toggle";
 import DashboardBreadcrumb from "@/components/commons/dashboard-breadcrumb";
+
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+
 import { Profile } from "@/types/auth";
+
+import { Bell } from "lucide-react";
+
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { ReactNode } from "react";
 
 export default async function DashboardLayout({
@@ -17,7 +25,9 @@ export default async function DashboardLayout({
   children: ReactNode;
 }) {
   const cookiesStore = await cookies();
+
   const profileData = JSON.parse(cookiesStore.get("profile")?.value ?? "{}");
+
   const profile: Profile = {
     id: profileData.id,
     userId: profileData.user_id,
@@ -34,21 +44,38 @@ export default async function DashboardLayout({
   return (
     <SidebarProvider>
       <AppSidebar profile={profile} />
+
       <SidebarInset className="overflow-x-hidden">
-        <header className="flex justify-between h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
+        {/* Header */}
+        <header className="flex justify-between h-16 shrink-0 items-center px-4 border-b bg-background">
+          {/* Left */}
+          <div className="flex items-center gap-2">
             <SidebarTrigger className="-ml-1 cursor-pointer" />
-            <Separator
-              orientation="vertical"
-              className="mr-2 data-[orientation=vertical]:h-4"
-            />
+
+            <Separator orientation="vertical" className="h-4" />
+
             <DashboardBreadcrumb />
           </div>
-          <div className="px-4">
+
+          {/* Right */}
+          <div className="flex items-center gap-2">
+            {/* Notification */}
+            <Link href="/dashboard/operator/notifications">
+              <Button variant="outline" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+
+                {/* Badge merah */}
+                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500" />
+              </Button>
+            </Link>
+
+            {/* Dark Mode */}
             <DarkModeToggle />
           </div>
         </header>
-        <main className="flex flex-1 flex-col items-start gap-4 p-4 pt-0">
+
+        {/* Main Content */}
+        <main className="flex flex-1 flex-col items-start gap-4 p-4 pt-4">
           {children}
         </main>
       </SidebarInset>
