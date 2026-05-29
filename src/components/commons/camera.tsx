@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import jsQR from "jsqr";
@@ -8,8 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { useQrStore } from "@/lib/stores/qr-store";
+import { useRouter } from "next/navigation";
 
 export function Camera() {
+  const setTag = useQrStore((state) => state.setTag);
+  const router = useRouter();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const requestRef = useRef<number | null>(null);
 
@@ -71,7 +77,8 @@ export function Camera() {
             lastScannedTime.current = now;
 
             toast.success(`Aset Ditemukan: ${code.data}`);
-            console.log("Hasil Scan:", code.data);
+            setTag(code.data);
+            router.push("/dashboard/operator/movements/create");
           }
         }
       }

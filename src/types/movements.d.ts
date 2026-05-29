@@ -17,3 +17,16 @@ export type Movement = {
   notes: string;
   created_at: string;
 };
+
+export type FormMovement = {
+  fromLocation: string;
+  toLocation: string;
+  pic: string;
+  notes: string | null;
+};
+
+export type MovementError = {
+  fromLocation?: string[] | undefined;
+  toLocation?: string[] | undefined;
+  notes?: string[] | undefined;
+};

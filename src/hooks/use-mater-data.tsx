@@ -8,6 +8,7 @@ type UseMasterDataType = {
   select?: string;
   offset?: { from: number; to: number };
   keyword?: string;
+  where?: { col: string; value: string };
   key: unknown[];
 };
 
@@ -15,6 +16,7 @@ export function useMasterData<T>({
   table,
   select = "*",
   keyword,
+  where,
   offset,
   key,
 }: UseMasterDataType) {
@@ -30,6 +32,10 @@ export function useMasterData<T>({
           table === "user_profiles" ? "fullname" : "name",
           `%${keyword}%`
         );
+      }
+
+      if (where) {
+        query.eq(where.col, where.value).single();
       }
 
       const { data, error } = await query;
