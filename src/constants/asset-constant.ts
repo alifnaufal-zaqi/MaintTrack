@@ -4,7 +4,7 @@ export const ASSET_TABLE_HEADER = [
   "Kategori",
   "Vendor",
   "Lokasi Sekarang",
-  "Status",
+  "Status Aset",
   "Aksi",
 ];
 

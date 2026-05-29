@@ -15,7 +15,7 @@ export const AssetSchema = z.object({
   location: z.string().min(1),
   purchasePrice: z.string().min(1),
   purchaseDate: z.string().min(1),
-  status: z.string().min(1),
+  status_asset: z.string().min(1),
   maintenanceInterval: z.string().min(1),
   image: z
     .instanceof(File)

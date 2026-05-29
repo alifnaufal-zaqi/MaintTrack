@@ -99,7 +99,7 @@ export function FormCreateAsset() {
       current_location_id: result.location,
       purchase_price: parseInt(result.purchasePrice),
       purchase_date: result.purchaseDate,
-      status: result.status,
+      status_asset: result.status_asset,
       maintenance_interval: parseInt(result.maintenanceInterval),
       asset_image_url: urlImage,
       asset_image_path: updloadData!.path,
@@ -181,8 +181,8 @@ export function FormCreateAsset() {
               <FieldSelect
                 label="Status Aset"
                 id="status"
-                name="status"
-                error={formError?.status?.[0]}
+                name="status_asset"
+                error={formError?.status_asset?.[0]}
               >
                 {STATUS_ASSET.map((item, index) => (
                   <SelectItem

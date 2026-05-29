@@ -47,7 +47,7 @@ export function DetailAsset({ id }: { id: string }) {
             id,
             name
           ),
-          status,
+          status_asset,
           asset_image_url
         `
         )
@@ -84,7 +84,7 @@ export function DetailAsset({ id }: { id: string }) {
                 <span>Informasi Utama</span>
               </div>
 
-              <Badge>{asset?.status}</Badge>
+              <Badge>{asset?.status_asset}</Badge>
             </CardTitle>
             <CardContent className="grid grid-cols-3 gap-x-4 gap-y-8 p-0 pb-8 mt-4">
               <div>

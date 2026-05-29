@@ -12,7 +12,7 @@ export type Asset = {
   purchase_date: string;
   qr_tag: string;
   next_maintenance_date: string;
-  status: "active" | "maintenance" | "nonactive" | "overdue" | string;
+  status_asset: "active" | "maintenance" | "nonactive" | "overdue" | string;
   created_at: string;
   maintenance_interval: number;
   last_maintenance_date: string;
@@ -27,7 +27,7 @@ export type FormAsset = {
   location?: Location["name"][];
   purchasePrice?: string[];
   purchaseDate?: string[];
-  status?: string[];
+  status_asset?: string[];
   maintenanceInterval?: string[];
   image?: string[];
 };
@@ -54,7 +54,7 @@ type AssetPreview = Pick<
   | "category"
   | "vendor"
   | "current_location"
-  | "status"
+  | "status_asset"
   | "asset_image_url"
   | "asset_image_path"
 > & {

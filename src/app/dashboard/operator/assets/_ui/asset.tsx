@@ -109,7 +109,7 @@ export function ListAssetsPage_Operator() {
             id,
             name
           ),
-          status,
+          status_asset,
           qr_tag,
           asset_image_url,
           asset_image_path
@@ -251,7 +251,7 @@ export function ListAssetsPage_Operator() {
                   {asset.current_location.name}
                 </TableCell>
                 <TableCell className="px-6 py-3">
-                  <Badge>{asset.status}</Badge>
+                  <Badge>{asset.status_asset}</Badge>
                 </TableCell>
                 <TableCell className="px-6 py-3">
                   <ActionButton

@@ -70,7 +70,7 @@ export function ListAssetsPage() {
             id,
             name
           ),
-          status,
+          status_asset,
           asset_image_url,
           asset_image_path
         `
@@ -164,7 +164,7 @@ export function ListAssetsPage() {
                   {asset.current_location.name}
                 </TableCell>
                 <TableCell className="px-6 py-3">
-                  <Badge>{asset.status}</Badge>
+                  <Badge>{asset.status_asset}</Badge>
                 </TableCell>
                 <TableCell className="px-6 py-3">
                   <ActionButton
