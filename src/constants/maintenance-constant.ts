@@ -1,9 +1,14 @@
 export const MAINTENANCE_TABLE_HEADER = [
-  "no",
+  "gambar aset",
   "nama aset",
   "tanggal",
   "tipe maintenance",
-  "PIC",
   "status progres",
-  "keterangan",
+  "cost",
+  "pic",
+  "aksi",
 ];
+
+export const MAINTENANCE_TYPE = ["perbaikan", "rutin", "all"] as const;
+
+export const MAINTENANCE_STATUS = ["process", "complete", "pending"];

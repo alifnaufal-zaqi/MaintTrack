@@ -1,10 +1,21 @@
+import { Asset } from "./asset";
+import { User } from "./users";
+
 export type Maintenance = {
   id: string;
-  asset_name: string;
+  asset: Pick<Asset, "name" | "asset_image_url">;
   maintenance_date: string;
   maintenance_type: string;
-  pic: string;
+  created_by: Pick<User, "fullname">;
+  cost: number;
   progress_status: string;
-  description: string;
+  notes: string | null;
   created_at: string;
+};
+
+export type MaintenanceError = {
+  date?: string[] | undefined;
+  type?: string[] | undefined;
+  cost?: string[] | undefined;
+  notes?: string[] | undefined;
 };

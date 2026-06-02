@@ -1,15 +1,12 @@
 "use client";
 
 import { ChangeEvent, useState } from "react";
-
 import Link from "next/link";
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-
 import {
   Select,
   SelectContent,
@@ -31,38 +28,66 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-import { MAINTENANCE_TABLE_HEADER } from "@/constants/operator-maintenance-constant";
-
+import {
+  MAINTENANCE_TABLE_HEADER,
+  MAINTENANCE_TYPE,
+} from "@/constants/maintenance-constant";
 import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
 import { createClient } from "@/lib/client";
-
-import type { Maintenance } from "@/types/operator-maintenance";
-
+import type { Maintenance } from "@/types/maintenance";
 import { useQuery } from "@tanstack/react-query";
-
 import { Filter, MoreVertical, QrCode } from "lucide-react";
-
 import { toast } from "sonner";
+import Image from "next/image";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Camera } from "@/components/commons/camera";
+import { useQrStore } from "@/lib/stores/qr-store";
+import { useRouter } from "next/navigation";
 
 export function Maintenance() {
   const supabase = createClient();
   const { page, limit } = usePagination();
+  const setQrTag = useQrStore((state) => state.setTag);
+  const router = useRouter();
   const { keyword, handleKeywordChange } = useSearch();
-  const [type, setType] = useState("all");
-
-  const { data: maintenances, isLoading } = useQuery<Maintenance[] | null>({
+  const [type, setType] = useState<(typeof MAINTENANCE_TYPE)[number]>("all");
+  const { data: maintenances, isLoading } = useQuery<
+    Omit<Maintenance, "notes">[] | null
+  >({
     queryKey: ["maintenances", page, limit, keyword, type],
     queryFn: async () => {
       let query = supabase
-        .from("maintenance_logs")
-        .select("*")
+        .from("maintenances")
+        .select(
+          `
+              id,
+              asset:assets!inner (
+                  name,
+                  asset_image_url
+              ),
+              maintenance_date,
+              maintenance_type,
+              cost,
+              created_by:user_profiles!inner (
+                fullname
+              ),
+              progress_status,
+              created_at
+        `
+        )
         .range((page - 1) * limit, page * limit - 1)
         .order("created_at", {
           ascending: false,
         })
-        .ilike("asset_name", `%${keyword}%`);
+        .ilike("asset.name", `%${keyword}%`);
 
       if (type !== "all") {
         query = query.eq("maintenance_type", type);
@@ -76,13 +101,13 @@ export function Maintenance() {
         });
       }
 
-      return data;
+      return data as Omit<Maintenance, "notes">[] | null;
     },
   });
 
   const handleUpdateStatus = async (id: string, status: string) => {
     const { error } = await supabase
-      .from("maintenance_logs")
+      .from("maintenances")
       .update({
         progress_status: status,
       })
@@ -115,29 +140,48 @@ export function Maintenance() {
             handleKeywordChange(event.target.value)
           }
         />
-
-        <Select value={type} onValueChange={setType}>
-          <SelectTrigger className="w-[220px]">
+        <Select
+          value={type}
+          onValueChange={(value) => setType(value as typeof type)}
+        >
+          <SelectTrigger className="w-55">
             <Filter className="w-4 h-4 mr-2" />
-
             <SelectValue placeholder="Filter maintenance" />
           </SelectTrigger>
-
           <SelectContent>
-            <SelectItem value="all">Semua</SelectItem>
-
-            <SelectItem value="Rutin">Rutin</SelectItem>
-
-            <SelectItem value="Perbaikan">Perbaikan</SelectItem>
+            {MAINTENANCE_TYPE.map((item, index) => (
+              <SelectItem
+                value={item}
+                key={`${item}-${index}`}
+                className="capitalize"
+              >
+                {item === "all" ? "Semua" : item}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
-
-        <Link href="/dashboard/operator/maintenances/scan">
-          <Button>
-            <QrCode className="w-4 h-4 mr-2" />
-            Scan QR
-          </Button>
-        </Link>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>
+              <QrCode className="w-4 h-4 mr-2" />
+              Scan QR
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Scan QRCode Aset</DialogTitle>
+              <DialogDescription>
+                Scan QRCode Aset anda disini
+              </DialogDescription>
+            </DialogHeader>
+            <Camera
+              onQrTagChange={(tag) => {
+                setQrTag(tag);
+                router.push("/dashboard/operator/maintenances/create");
+              }}
+            />
+          </DialogContent>
+        </Dialog>
       </Card>
 
       <Card className="p-0">
@@ -154,30 +198,34 @@ export function Maintenance() {
               ))}
             </TableRow>
           </TableHeader>
-
           <TableBody>
-            {maintenances?.map((maintenance, index) => (
+            {maintenances?.map((maintenance) => (
               <TableRow key={maintenance.id}>
-                <TableCell className="px-6 py-3">{index + 1}</TableCell>
-
                 <TableCell className="px-6 py-3">
-                  {maintenance.asset_name}
+                  <Image
+                    alt={maintenance.asset.name}
+                    src={maintenance.asset.asset_image_url}
+                    width={0}
+                    height={0}
+                    className="w-12 h-12 rounded-md border"
+                  />
                 </TableCell>
-
+                <TableCell className="px-6 py-3">
+                  {maintenance.asset.name}
+                </TableCell>
                 <TableCell className="px-6 py-3">
                   {maintenance.maintenance_date}
                 </TableCell>
-
-                <TableCell className="px-6 py-3">
+                <TableCell className="px-6 py-3 capitalize">
                   {maintenance.maintenance_type}
                 </TableCell>
-
                 <TableCell className="px-6 py-3">
                   <Badge
+                    className="capitalize"
                     variant={
-                      maintenance.progress_status === "Selesai"
+                      maintenance.progress_status === "complete"
                         ? "default"
-                        : maintenance.progress_status === "Proses"
+                        : maintenance.progress_status === "process"
                         ? "secondary"
                         : "outline"
                     }
@@ -185,11 +233,10 @@ export function Maintenance() {
                     {maintenance.progress_status}
                   </Badge>
                 </TableCell>
-
+                <TableCell className="px-6 py-3">{maintenance.cost}</TableCell>
                 <TableCell className="px-6 py-3">
-                  {maintenance.description}
+                  {maintenance.created_by.fullname}
                 </TableCell>
-
                 <TableCell className="px-6 py-3">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -197,27 +244,24 @@ export function Maintenance() {
                         <MoreVertical className="w-5 h-5" />
                       </Button>
                     </DropdownMenuTrigger>
-
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
                         onClick={() =>
-                          handleUpdateStatus(maintenance.id, "Planning")
+                          handleUpdateStatus(maintenance.id, "pending")
                         }
                       >
-                        Planning
+                        Pending
                       </DropdownMenuItem>
-
                       <DropdownMenuItem
                         onClick={() =>
-                          handleUpdateStatus(maintenance.id, "Proses")
+                          handleUpdateStatus(maintenance.id, "procsess")
                         }
                       >
                         Proses
                       </DropdownMenuItem>
-
                       <DropdownMenuItem
                         onClick={() =>
-                          handleUpdateStatus(maintenance.id, "Selesai")
+                          handleUpdateStatus(maintenance.id, "complete")
                         }
                       >
                         Selesai
@@ -227,7 +271,6 @@ export function Maintenance() {
                 </TableCell>
               </TableRow>
             ))}
-
             {maintenances?.length === 0 && !isLoading && (
               <TableRow>
                 <TableCell
@@ -238,7 +281,6 @@ export function Maintenance() {
                 </TableCell>
               </TableRow>
             )}
-
             {isLoading && (
               <TableRow>
                 <TableCell
