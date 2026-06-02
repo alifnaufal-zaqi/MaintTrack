@@ -1,10 +1,12 @@
 "use client";
 
 import { Camera } from "@/components/commons/camera";
+import { FieldInput } from "@/components/commons/field-input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -16,6 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Field, FieldGroup, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -33,18 +36,25 @@ import {
 import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
 import { createClient } from "@/lib/client";
+import { useQrStore } from "@/lib/stores/qr-store";
 import { Movement } from "@/types/movements";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export function AssetMovement() {
   const supabase = createClient();
   const { handleKeywordChange, keyword } = useSearch();
   const { limit, page } = usePagination();
-  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const router = useRouter();
+  const setQrTag = useQrStore((state) => state.setTag);
+  const [dialogState, setDialogState] = useState<{
+    scan: boolean;
+    input: boolean;
+  }>({ input: false, scan: false });
   const { data: movements, isLoading } = useQuery<
     Omit<Movement, "notes" | "created_at">[] | null
   >({
@@ -83,6 +93,15 @@ export function AssetMovement() {
     },
   });
 
+  const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const tag = formData.get("tag") as string;
+
+    setQrTag(tag);
+    router.push("/dashboard/operator/movements/create");
+  };
+
   return (
     <div className="w-full space-y-4">
       <h1 className="text-xl font-bold text-primary">Perpindahan Aset</h1>
@@ -106,7 +125,9 @@ export function AssetMovement() {
                 key={`${menu.label}-${index}`}
                 onClick={() => {
                   if (menu.label === "QRCode") {
-                    setIsDialogOpen(true);
+                    setDialogState((prev) => ({ ...prev, scan: true }));
+                  } else {
+                    setDialogState((prev) => ({ ...prev, input: true }));
                   }
                 }}
               >
@@ -186,15 +207,58 @@ export function AssetMovement() {
       </Card>
 
       <Dialog
-        open={isDialogOpen}
-        onOpenChange={(value) => setIsDialogOpen(value)}
+        open={dialogState.scan}
+        onOpenChange={(value) =>
+          setDialogState((prev) => ({ ...prev, scan: value }))
+        }
       >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Scan QRCode Aset</DialogTitle>
             <DialogDescription>Scan QRCode Aset anda disini</DialogDescription>
           </DialogHeader>
-          <Camera />
+          <Camera
+            onQrTagChange={(tag) => {
+              setQrTag(tag);
+              router.push("/dashboard/operator/movements/create");
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={dialogState.input}
+        onOpenChange={(value) =>
+          setDialogState((prev) => ({ ...prev, input: value }))
+        }
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Input QRTag Asset</DialogTitle>
+            <DialogDescription>Input QRTag Asset anda Disini</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit}>
+            <FieldSet>
+              <FieldGroup>
+                <FieldInput
+                  error={undefined}
+                  id="tag"
+                  label="QR Tag"
+                  type="text"
+                  name="tag"
+                  placeholder="Masukan qr tag asset anda"
+                ></FieldInput>
+                <Field orientation={"horizontal"}>
+                  <Button type="submit">Submit</Button>
+                  <DialogClose asChild>
+                    <Button type="button" variant={"outline"}>
+                      Tutup
+                    </Button>
+                  </DialogClose>
+                </Field>
+              </FieldGroup>
+            </FieldSet>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

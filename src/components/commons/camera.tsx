@@ -13,7 +13,11 @@ import {
 import { useQrStore } from "@/lib/stores/qr-store";
 import { useRouter } from "next/navigation";
 
-export function Camera() {
+type CameraProps = {
+  onQrTagChange: (tag: string) => void;
+};
+
+export function Camera({ onQrTagChange }: CameraProps) {
   const setTag = useQrStore((state) => state.setTag);
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -77,8 +81,10 @@ export function Camera() {
             lastScannedTime.current = now;
 
             toast.success(`Aset Ditemukan: ${code.data}`);
-            setTag(code.data);
-            router.push("/dashboard/operator/movements/create");
+            // Buat sebuah callback function untuk melakukan aksi di parent component supaya menjadi reuseable
+            // setTag(code.data);
+            // router.push("/dashboard/operator/movements/create");
+            onQrTagChange(code.data);
           }
         }
       }
