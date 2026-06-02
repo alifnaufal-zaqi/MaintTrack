@@ -88,7 +88,11 @@ export function AssetMovement() {
       <h1 className="text-xl font-bold text-primary">Perpindahan Aset</h1>
 
       <Card className="p-2 flex flex-row gap-2 items-center">
-        <Input type="search" placeholder="Cari data perpindahan" />
+        <Input
+          type="search"
+          placeholder="Cari data perpindahan"
+          onChange={(event) => handleKeywordChange(event.target.value)}
+        />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button>
@@ -96,7 +100,7 @@ export function AssetMovement() {
               <ChevronDown />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent>
+          <DropdownMenuContent side="bottom" className="w-36">
             {DROPDOWN_MENUS.map((menu, index) => (
               <DropdownMenuItem
                 key={`${menu.label}-${index}`}

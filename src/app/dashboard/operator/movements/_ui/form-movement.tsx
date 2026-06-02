@@ -24,7 +24,6 @@ import { Asset } from "@/types/asset";
 import { Location } from "@/types/locations";
 import {
   FormMovement as FormMovementType,
-  Movement,
   MovementError,
 } from "@/types/movements";
 import { validateFormData } from "@/utils/validate-data";

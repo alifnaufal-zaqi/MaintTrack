@@ -1,8 +1,21 @@
 "use client";
 
-import { ActionButton } from "@/components/commons/action-button";
+import { Camera } from "@/components/commons/camera";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -13,54 +26,72 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { MOVEMENTS_TABLE_HEADER} from "@/constants/movements-constant";
+import {
+  DROPDOWN_MENUS,
+  MOVEMENTS_TABLE_HEADER,
+} from "@/constants/movements-constant";
 import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
 import { createClient } from "@/lib/client";
-import { Movement as MovementsType } from "@/types/movements";
+import { Movement as MovementType } from "@/types/movements";
 import { useQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
-import Link from "next/link";
-import { ChangeEvent } from "react";
+import { ChevronDown } from "lucide-react";
+import Image from "next/image";
+import { useState } from "react";
 import { toast } from "sonner";
 
 export function Movements() {
   const supabase = createClient();
-    const { page, limit, handleLimitChange, handlePageChange } = usePagination();
-    const { keyword, handleKeywordChange } = useSearch();
-    const { data: movements, isLoading } = useQuery<MovementsType[] | null>({
-      queryKey: ["movements", page, limit, keyword],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from("movements")
-          .select("*")
-          .range((page - 1) * limit, page * limit - 1)
-          .order("created_at")
-          .ilike("name", `%${keyword}%`);
-  
-        if (error) {
-          toast.error("Gagal", {
-            description: error.message,
-          });
-        }
-  
-        return data;
-      },
-    });
-  
+  const { handleKeywordChange, keyword } = useSearch();
+  const { limit, page } = usePagination();
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const { data: movements, isLoading } = useQuery<
+    Omit<MovementType, "notes" | "created_at">[] | null
+  >({
+    queryKey: ["item_movements", keyword, page, limit],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("asset_movements")
+        .select(
+          `
+            id,
+            asset:assets!inner (
+                name,
+                asset_image_url
+            ),
+            from_location:locations!asset_movements_from_location_id_fkey (
+                name
+            ),
+            to_location:locations!asset_movements_to_location_id_fkey (
+                name
+            ),
+            movement_date,
+            pic:user_profiles!inner (
+                fullname
+            )
+        `
+        )
+        .range((page - 1) * limit, page * limit - 1)
+        .order("created_at")
+        .ilike("asset.name", `%${keyword}%`);
+
+      if (error) {
+        toast.error("Gagal", { description: error.message });
+      }
+
+      return data as Omit<MovementType, "notes" | "created_at">[] | null;
+    },
+  });
+
   return (
     <div className="w-full space-y-4">
-      <h1 className="text-xl text-primary font-bold">
-        Manajemen Data Movements
-      </h1>
+      <h1 className="text-xl font-bold text-primary">Perpindahan Aset</h1>
 
       <Card className="p-2 flex flex-row gap-2 items-center">
         <Input
           type="search"
-          placeholder="Cari data aset berdasarkan nama"
-          onChange={(event: ChangeEvent<HTMLInputElement>) =>
-            handleKeywordChange(event.target.value)
-          }
+          placeholder="Cari data perpindahan"
+          onChange={(event) => handleKeywordChange(event.target.value)}
         />
       </Card>
 
@@ -68,22 +99,44 @@ export function Movements() {
         <Table className="w-full rounded-lg overflow-hidden">
           <TableHeader className="bg-muted sticky top-0 z-10">
             <TableRow>
-              {MOVEMENTS_TABLE_HEADER.map((head) => (
-                <TableHead className="capitalize px-6 py-3">{head}</TableHead>
+              {MOVEMENTS_TABLE_HEADER.map((header, index) => (
+                <TableHead
+                  key={`${header}-${index}`}
+                  className="capitalize px-6 py-3"
+                >
+                  {header}
+                </TableHead>
               ))}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {movements?.map((movement, index) => (
+            {movements?.map((movement) => (
               <TableRow key={movement.id}>
-                <TableCell className="px-6 py-3">{index + 1}</TableCell>
-                <TableCell className="px-6 py-3">{movement.asset_id}</TableCell>
-                <TableCell className="px-6 py-3">{movement.from_location_id}</TableCell>
-                <TableCell className="px-6 py-3">{movement.to_location_id}</TableCell>
-                <TableCell className="px-6 py-3">{movement.movement_date}</TableCell>
-                <TableCell className="px-6 py-3">{movement.pic_name}</TableCell>
-                <TableCell className="px-6 py-3">{movement.notes}</TableCell>
-              </TableRow>                                
+                <TableCell className="px-6 py-3">
+                  <Image
+                    alt={movement.asset.name}
+                    src={movement.asset.asset_image_url}
+                    width={0}
+                    height={0}
+                    className="w-12 h-12 rounded-md border"
+                  />
+                </TableCell>
+                <TableCell className="px-6 py-3">
+                  {movement.asset.name}
+                </TableCell>
+                <TableCell className="px-6 py-3">
+                  {movement.from_location.name}
+                </TableCell>
+                <TableCell className="px-6 py-3">
+                  {movement.to_location.name}
+                </TableCell>
+                <TableCell className="px-6 py-3">
+                  {movement.movement_date}
+                </TableCell>
+                <TableCell className="px-6 py-3">
+                  {movement.pic.fullname}
+                </TableCell>
+              </TableRow>
             ))}
             {movements?.length === 0 && !isLoading && (
               <TableRow>
@@ -97,10 +150,7 @@ export function Movements() {
             )}
             {isLoading && (
               <TableRow>
-                <TableCell
-                  colSpan={MOVEMENTS_TABLE_HEADER.length}
-                  className="h-24"
-                >
+                <TableCell colSpan={MOVEMENTS_TABLE_HEADER.length}>
                   <div className="flex flex-col gap-2 justify-center items-center w-full">
                     <Spinner />
                     <span>Memuat...</span>
@@ -111,6 +161,19 @@ export function Movements() {
           </TableBody>
         </Table>
       </Card>
+
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(value) => setIsDialogOpen(value)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Scan QRCode Aset</DialogTitle>
+            <DialogDescription>Scan QRCode Aset anda disini</DialogDescription>
+          </DialogHeader>
+          <Camera />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

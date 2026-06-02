@@ -11,11 +11,11 @@ export const MOVEMENTS_TABLE_HEADER = [
 
 export const DROPDOWN_MENUS = [
   {
-    label: "Form",
+    label: "Input QRTag",
     icon: Form,
   },
   {
-    label: "QRCode",
+    label: "Scan QRCode",
     icon: QrCode,
   },
 ];
