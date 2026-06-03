@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/client";
 import { useQuery } from "@tanstack/react-query";
-import usePagination from "./use-pagination";
 import { toast } from "sonner";
 
 type UseMasterDataType = {

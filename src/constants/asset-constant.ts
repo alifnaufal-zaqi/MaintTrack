@@ -8,4 +8,9 @@ export const ASSET_TABLE_HEADER = [
   "Aksi",
 ];
 
-export const STATUS_ASSET = ["active", "maintenance", "nonactive", "overdue"];
+export const STATUS_ASSET = [
+  "active",
+  "maintenance",
+  "nonactive",
+  "overdue",
+] as const;
