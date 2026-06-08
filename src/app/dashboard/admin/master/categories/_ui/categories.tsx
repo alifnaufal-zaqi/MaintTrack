@@ -1,6 +1,7 @@
 "use client";
 
 import { ActionButton } from "@/components/commons/action-button";
+import { PaginationButton } from "@/components/commons/pagination-button";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -27,6 +28,7 @@ import { CATEGORIES_TABLE_HEADER } from "@/constants/categories-constant";
 import { useMasterData } from "@/hooks/use-mater-data";
 import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
+import useTotalPage from "@/hooks/use-total-page";
 import { createClient } from "@/lib/client";
 import { Category } from "@/types/categories";
 import { DialogState } from "@/types/dialog-state";
@@ -99,6 +101,7 @@ export function AssetsCategories() {
       });
     },
   });
+  const { totalPage } = useTotalPage(categories, limit);
 
   const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -195,6 +198,13 @@ export function AssetsCategories() {
           </TableBody>
         </Table>
       </Card>
+      <PaginationButton
+        currentLimit={limit}
+        currentPage={page}
+        onChangeLimit={handleLimitChange}
+        onChangePage={handlePageChange}
+        totalPages={totalPage}
+      />
 
       {/* Dialog Delete */}
       <Dialog

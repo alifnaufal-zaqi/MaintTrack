@@ -2,6 +2,7 @@
 
 import { Camera } from "@/components/commons/camera";
 import { FieldInput } from "@/components/commons/field-input";
+import { PaginationButton } from "@/components/commons/pagination-button";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -35,6 +36,7 @@ import {
 } from "@/constants/movements-constant";
 import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
+import useTotalPage from "@/hooks/use-total-page";
 import { createClient } from "@/lib/client";
 import { useQrStore } from "@/lib/stores/qr-store";
 import { Movement } from "@/types/movements";
@@ -48,7 +50,7 @@ import { toast } from "sonner";
 export function AssetMovement() {
   const supabase = createClient();
   const { handleKeywordChange, keyword } = useSearch();
-  const { limit, page } = usePagination();
+  const { limit, page, handleLimitChange, handlePageChange } = usePagination();
   const router = useRouter();
   const setQrTag = useQrStore((state) => state.setTag);
   const [dialogState, setDialogState] = useState<{
@@ -92,6 +94,7 @@ export function AssetMovement() {
       return data as Omit<Movement, "notes" | "created_at">[] | null;
     },
   });
+  const { totalPage } = useTotalPage(movements, limit);
 
   const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -205,6 +208,13 @@ export function AssetMovement() {
           </TableBody>
         </Table>
       </Card>
+      <PaginationButton
+        currentLimit={limit}
+        currentPage={page}
+        onChangeLimit={handleLimitChange}
+        onChangePage={handlePageChange}
+        totalPages={totalPage}
+      />
 
       <Dialog
         open={dialogState.scan}

@@ -38,19 +38,19 @@ import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useState } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
-import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import { ListCheck, Printer, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { AssetBarcode } from "@/components/commons/asset-barcode";
+import { PaginationButton } from "@/components/commons/pagination-button";
+import useTotalPage from "@/hooks/use-total-page";
 
 export function ListAssetsPage_Operator() {
   const supabase = createClient();
   const router = useRouter();
   const { handleKeywordChange, keyword } = useSearch();
-  const { limit, page } = usePagination();
+  const { limit, page, handleLimitChange, handlePageChange } = usePagination();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
   const [isSelection, setIsSelection] = useState<boolean>(false);
@@ -138,7 +138,6 @@ export function ListAssetsPage_Operator() {
       query = query
         .order("created_at")
         .range((page - 1) * limit, page * limit - 1);
-
       const { data, error } = await query;
 
       if (error) {
@@ -148,33 +147,7 @@ export function ListAssetsPage_Operator() {
       return data as AssetPreview[] | null;
     },
   });
-
-  const downloadQrCode = (tag: string, name: string) => {
-    try {
-      const svgMarkup = renderToStaticMarkup(
-        <QRCodeSVG value={tag} size={256} />
-      );
-      const blob = new Blob([svgMarkup], {
-        type: "image/svg+xml;charset=utf-8",
-      });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${name.replace(/\s+/g, "-").toLowerCase()}-qr.svg`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-      toast.success("Berhasil mengunduh QR", {
-        description: "QR code telah diunduh sebagai file SVG.",
-      });
-    } catch (error) {
-      toast.error("Gagal mengunduh QR", {
-        description:
-          error instanceof Error ? error.message : "Terjadi kesalahan.",
-      });
-    }
-  };
+  const { totalPage } = useTotalPage(assets, limit);
 
   return (
     <div className="w-full space-y-4">
@@ -372,6 +345,13 @@ export function ListAssetsPage_Operator() {
           </Table>
         </CardContent>
       </Card>
+      <PaginationButton
+        currentLimit={limit}
+        currentPage={page}
+        onChangeLimit={handleLimitChange}
+        onChangePage={handlePageChange}
+        totalPages={totalPage}
+      />
     </div>
   );
 }

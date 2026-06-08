@@ -1,6 +1,7 @@
 "use client";
 
 import { ActionButton } from "@/components/commons/action-button";
+import { PaginationButton } from "@/components/commons/pagination-button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ import {
 } from "@/constants/maintenance-constant";
 import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
+import useTotalPage from "@/hooks/use-total-page";
 import { createClient } from "@/lib/client";
 import { Maintenance as MaintenanceType } from "@/types/maintenance";
 import { useQuery } from "@tanstack/react-query";
@@ -36,7 +38,7 @@ import { toast } from "sonner";
 
 export function Maintenance() {
   const supabase = createClient();
-  const { page, limit } = usePagination();
+  const { page, limit, handleLimitChange, handlePageChange } = usePagination();
   const { keyword, handleKeywordChange } = useSearch();
   const [type, setType] = useState<(typeof MAINTENANCE_TYPE)[number]>("all");
   const { data: maintenances, isLoading } = useQuery<
@@ -84,6 +86,7 @@ export function Maintenance() {
       return data as Omit<MaintenanceType, "notes">[] | null;
     },
   });
+  const { totalPage } = useTotalPage(maintenances, limit);
 
   return (
     <div className="w-full space-y-4">
@@ -202,6 +205,13 @@ export function Maintenance() {
           </TableBody>
         </Table>
       </Card>
+      <PaginationButton
+        currentLimit={limit}
+        currentPage={page}
+        onChangeLimit={handleLimitChange}
+        onChangePage={handlePageChange}
+        totalPages={totalPage}
+      />
     </div>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { ChangeEvent, useState } from "react";
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -51,10 +50,12 @@ import {
 import { Camera } from "@/components/commons/camera";
 import { useQrStore } from "@/lib/stores/qr-store";
 import { useRouter } from "next/navigation";
+import useTotalPage from "@/hooks/use-total-page";
+import { PaginationButton } from "@/components/commons/pagination-button";
 
 export function Maintenance() {
   const supabase = createClient();
-  const { page, limit } = usePagination();
+  const { page, limit, handleLimitChange, handlePageChange } = usePagination();
   const setQrTag = useQrStore((state) => state.setTag);
   const router = useRouter();
   const { keyword, handleKeywordChange } = useSearch();
@@ -104,6 +105,7 @@ export function Maintenance() {
       return data as Omit<Maintenance, "notes">[] | null;
     },
   });
+  const { totalPage } = useTotalPage(maintenances, limit);
 
   const handleUpdateStatus = async (id: string, status: string) => {
     const { error } = await supabase
@@ -298,6 +300,13 @@ export function Maintenance() {
           </TableBody>
         </Table>
       </Card>
+      <PaginationButton
+        currentLimit={limit}
+        currentPage={page}
+        onChangeLimit={handleLimitChange}
+        onChangePage={handlePageChange}
+        totalPages={totalPage}
+      />
     </div>
   );
 }

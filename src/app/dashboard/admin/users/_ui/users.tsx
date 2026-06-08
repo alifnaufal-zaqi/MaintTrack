@@ -3,6 +3,7 @@
 import { resetPassword } from "@/app/actions/reset-password";
 import { ActionButton } from "@/components/commons/action-button";
 import { FieldInput } from "@/components/commons/field-input";
+import { PaginationButton } from "@/components/commons/pagination-button";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -29,6 +30,7 @@ import { USERS_TABLE_HEADER } from "@/constants/users-constant";
 import { useMasterData } from "@/hooks/use-mater-data";
 import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
+import useTotalPage from "@/hooks/use-total-page";
 import { User } from "@/types/users";
 import { Plus } from "lucide-react";
 import Image from "next/image";
@@ -54,6 +56,7 @@ export function AssetsUsers() {
     resetPasswordWithId,
     undefined
   );
+  const { totalPage } = useTotalPage(users, limit);
 
   useEffect(() => {
     if (state?.status === "success") {
@@ -158,6 +161,13 @@ export function AssetsUsers() {
           </TableBody>
         </Table>
       </Card>
+      <PaginationButton
+        currentLimit={limit}
+        currentPage={page}
+        onChangeLimit={handleLimitChange}
+        onChangePage={handlePageChange}
+        totalPages={totalPage}
+      />
 
       <Dialog
         open={dialogState.reset}

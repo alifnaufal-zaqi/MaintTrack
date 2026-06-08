@@ -2,6 +2,7 @@
 
 import { ActionButton } from "@/components/commons/action-button";
 import { DropzoneUpload } from "@/components/commons/dropzone-upload";
+import { PaginationButton } from "@/components/commons/pagination-button";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -35,6 +36,7 @@ import { VENDORS_TABLE_HEADER } from "@/constants/vendors-constant";
 import { useMasterData } from "@/hooks/use-mater-data";
 import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
+import useTotalPage from "@/hooks/use-total-page";
 import { createClient } from "@/lib/client";
 import { VendorSchema } from "@/schemas/vendor";
 import { DialogState } from "@/types/dialog-state";
@@ -49,7 +51,7 @@ import { toast } from "sonner";
 export function Vendors() {
   const supabase = createClient();
   const queryClient = useQueryClient();
-  const { page, limit } = usePagination();
+  const { page, limit, handleLimitChange, handlePageChange } = usePagination();
   const { keyword, handleKeywordChange } = useSearch();
   const [dialogState, setDialogState] = useState<DialogState>({
     update: false,
@@ -139,10 +141,11 @@ export function Vendors() {
       });
     },
   });
+  const { totalPage } = useTotalPage(vendors, limit);
 
   const handleUpdate = async (
     event: SubmitEvent<HTMLFormElement>,
-    vendor: Vendor,
+    vendor: Vendor
   ) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -301,6 +304,13 @@ export function Vendors() {
           </TableBody>
         </Table>
       </Card>
+      <PaginationButton
+        currentLimit={limit}
+        currentPage={page}
+        onChangeLimit={handleLimitChange}
+        onChangePage={handlePageChange}
+        totalPages={totalPage}
+      />
 
       {/* DELETE */}
       <Dialog

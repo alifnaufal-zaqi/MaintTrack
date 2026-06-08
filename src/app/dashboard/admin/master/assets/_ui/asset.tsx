@@ -1,6 +1,7 @@
 "use client";
 
 import { ActionButton } from "@/components/commons/action-button";
+import { PaginationButton } from "@/components/commons/pagination-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,6 +27,7 @@ import {
 import { ASSET_TABLE_HEADER } from "@/constants/asset-constant";
 import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
+import useTotalPage from "@/hooks/use-total-page";
 import { createClient } from "@/lib/client";
 import { AssetPreview } from "@/types/asset";
 import { DialogState } from "@/types/dialog-state";
@@ -43,7 +45,7 @@ export function ListAssetsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { handleKeywordChange, keyword } = useSearch();
-  const { limit, page } = usePagination();
+  const { limit, page, handleLimitChange, handlePageChange } = usePagination();
   const [dialogState, setDialogState] = useState<DialogState>({
     delete: false,
     update: false,
@@ -108,6 +110,7 @@ export function ListAssetsPage() {
       });
     },
   });
+  const { totalPage } = useTotalPage(assets, limit);
 
   return (
     <div className="w-full space-y-4">
@@ -205,6 +208,13 @@ export function ListAssetsPage() {
           </TableBody>
         </Table>
       </Card>
+      <PaginationButton
+        currentLimit={limit}
+        currentPage={page}
+        onChangeLimit={handleLimitChange}
+        onChangePage={handlePageChange}
+        totalPages={totalPage}
+      />
 
       <Dialog
         open={dialogState.delete}

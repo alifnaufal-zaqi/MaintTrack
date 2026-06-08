@@ -1,6 +1,7 @@
 "use client";
 
 import { Camera } from "@/components/commons/camera";
+import { PaginationButton } from "@/components/commons/pagination-button";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -32,6 +33,7 @@ import {
 } from "@/constants/movements-constant";
 import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
+import useTotalPage from "@/hooks/use-total-page";
 import { createClient } from "@/lib/client";
 import { Movement as MovementType } from "@/types/movements";
 import { useQuery } from "@tanstack/react-query";
@@ -43,8 +45,7 @@ import { toast } from "sonner";
 export function Movements() {
   const supabase = createClient();
   const { handleKeywordChange, keyword } = useSearch();
-  const { limit, page } = usePagination();
-  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const { limit, page, handleLimitChange, handlePageChange } = usePagination();
   const { data: movements, isLoading } = useQuery<
     Omit<MovementType, "notes" | "created_at">[] | null
   >({
@@ -82,6 +83,7 @@ export function Movements() {
       return data as Omit<MovementType, "notes" | "created_at">[] | null;
     },
   });
+  const { totalPage } = useTotalPage(movements, limit);
 
   return (
     <div className="w-full space-y-4">
@@ -161,19 +163,13 @@ export function Movements() {
           </TableBody>
         </Table>
       </Card>
-
-      <Dialog
-        open={isDialogOpen}
-        onOpenChange={(value) => setIsDialogOpen(value)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Scan QRCode Aset</DialogTitle>
-            <DialogDescription>Scan QRCode Aset anda disini</DialogDescription>
-          </DialogHeader>
-          <Camera />
-        </DialogContent>
-      </Dialog>
+      <PaginationButton
+        currentLimit={limit}
+        currentPage={page}
+        onChangeLimit={handleLimitChange}
+        onChangePage={handlePageChange}
+        totalPages={totalPage}
+      />
     </div>
   );
 }
