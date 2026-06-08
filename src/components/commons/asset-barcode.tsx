@@ -1,5 +1,11 @@
 import { QRCodeSVG } from "qrcode.react";
 
-export function AssetBarcode({ tag }: { tag: string }) {
-  return <QRCodeSVG value={tag} size={200} />;
+export function AssetBarcode({
+  tag,
+  margin,
+}: {
+  tag: string;
+  margin?: string;
+}) {
+  return <QRCodeSVG className={`${margin}`} value={tag} size={200} />;
 }

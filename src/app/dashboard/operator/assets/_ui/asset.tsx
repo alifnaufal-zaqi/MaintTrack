@@ -3,15 +3,14 @@
 import { ActionButton } from "@/components/commons/action-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
@@ -35,27 +34,28 @@ import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
 import { createClient } from "@/lib/client";
 import { AssetPreview } from "@/types/asset";
-import { DialogState } from "@/types/dialog-state";
-import { removeFileFromStorage } from "@/utils/remove-file-from-storage";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
+import { ListCheck, Printer, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
+import { AssetBarcode } from "@/components/commons/asset-barcode";
 
 export function ListAssetsPage_Operator() {
   const supabase = createClient();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { handleKeywordChange, keyword } = useSearch();
   const { limit, page } = usePagination();
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [selectedLocation, setSelectedLocation] = useState<string>("");
-  const [selectedAsset, setSelectedAsset] = useState<AssetPreview | null>();
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedLocation, setSelectedLocation] = useState<string>("all");
+  const [isSelection, setIsSelection] = useState<boolean>(false);
+  const [qrTags, setQrTags] = useState<string[]>([]);
+
   // fetch categories for filter
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -91,7 +91,14 @@ export function ListAssetsPage_Operator() {
   });
 
   const { isLoading, data: assets } = useQuery<AssetPreview[] | null>({
-    queryKey: ["assets", page, limit, keyword, selectedCategory, selectedLocation],
+    queryKey: [
+      "assets",
+      page,
+      limit,
+      keyword,
+      selectedCategory,
+      selectedLocation,
+    ],
     queryFn: async () => {
       let query = supabase.from("assets").select(
         `
@@ -120,15 +127,17 @@ export function ListAssetsPage_Operator() {
         query = query.ilike("name", `%${keyword}%`);
       }
 
-      if (selectedCategory) {
+      if (selectedCategory !== "all") {
         query = query.eq("category_id", selectedCategory);
       }
 
-      if (selectedLocation) {
+      if (selectedLocation !== "all") {
         query = query.eq("current_location_id", selectedLocation);
       }
 
-      query = query.order("created_at").range((page - 1) * limit, page * limit - 1);
+      query = query
+        .order("created_at")
+        .range((page - 1) * limit, page * limit - 1);
 
       const { data, error } = await query;
 
@@ -139,7 +148,6 @@ export function ListAssetsPage_Operator() {
       return data as AssetPreview[] | null;
     },
   });
-  
 
   const downloadQrCode = (tag: string, name: string) => {
     try {
@@ -185,15 +193,15 @@ export function ListAssetsPage_Operator() {
         <div className="flex gap-2">
           <Select
             value={selectedCategory}
-            onValueChange={(val) => setSelectedCategory(val)}
+            onValueChange={(value) => setSelectedCategory(value)}
           >
             <SelectTrigger size="sm" className="w-44">
               <SelectValue placeholder="Kategori" />
             </SelectTrigger>
             <SelectContent id="category">
               <SelectItem value="all">Semua</SelectItem>
-              {categories?.map((category: any) => (
-                <SelectItem key={category.id} value={String(category.id || 'unknown')}>
+              {categories?.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
                   {category.name}
                 </SelectItem>
               ))}
@@ -202,15 +210,15 @@ export function ListAssetsPage_Operator() {
 
           <Select
             value={selectedLocation}
-            onValueChange={(val) => setSelectedLocation(val)}
+            onValueChange={(value) => setSelectedLocation(value)}
           >
             <SelectTrigger size="sm" className="w-44">
               <SelectValue placeholder="Lokasi" />
             </SelectTrigger>
             <SelectContent id="location">
               <SelectItem value="all">Semua</SelectItem>
-              {locations?.map((location: any) => (
-                <SelectItem key={location.id} value={String(location.id || 'unknown')}>
+              {locations?.map((location) => (
+                <SelectItem key={location.id} value={location.id}>
                   {location.name}
                 </SelectItem>
               ))}
@@ -219,80 +227,150 @@ export function ListAssetsPage_Operator() {
         </div>
       </Card>
 
-      <Card className="p-0">
-        <Table className="w-full rounded-lg overflow-hidden">
-          <TableHeader className="bg-muted sticky top-0 z-10">
-            <TableRow>
-              {ASSET_TABLE_HEADER.map((head, index) => (
-                <TableHead key={`${head}-${index}`} className="px-6 py-3">
-                  {head}
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {assets?.map((asset) => (
-              <TableRow key={asset.id}>
-                <TableCell className="px-6 py-3">
-                  <Image
-                    width={0}
-                    height={0}
-                    src={asset.asset_image_url}
-                    alt={asset.name}
-                    className="w-12 h-12 rounded-md object-cover border"
-                  />
-                </TableCell>
-                <TableCell className="px-6 py-3">{asset.name}</TableCell>
-                <TableCell className="px-6 py-3">
-                  {asset.category.name}
-                </TableCell>
-                <TableCell className="px-6 py-3">{asset.vendor.name}</TableCell>
-                <TableCell className="px-6 py-3">
-                  {asset.current_location.name}
-                </TableCell>
-                <TableCell className="px-6 py-3">
-                  <Badge>{asset.status_asset}</Badge>
-                </TableCell>
-                <TableCell className="px-6 py-3">
-                  <ActionButton
-                    isDetail
-                    isDownloadQr
-                    onDetailClick={() => {
-                      router.push(`/dashboard/operator/assets/${asset.id}`);
-                    }}
-                    onDownloadQrClick={() => {
-                      if (!asset.qr_tag) {
-                        toast.error("QR tag tidak tersedia");
-                        return;
-                      }
-                      downloadQrCode(asset.qr_tag, asset.name);
-                    }}
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
-            {assets?.length === 0 && !isLoading && (
-              <TableRow>
-                <TableCell
-                  colSpan={ASSET_TABLE_HEADER.length}
-                  className="h-24 text-center"
-                >
-                  Data belum tersedia
-                </TableCell>
-              </TableRow>
-            )}
-            {isLoading && (
-              <TableRow>
-                <TableCell colSpan={ASSET_TABLE_HEADER.length} className="h-24">
-                  <div className="flex flex-col gap-2 justify-center items-center w-full">
-                    <Spinner />
-                    <span>Memuat...</span>
+      <Card>
+        <CardHeader>
+          <div className="max-w-lg flex gap-2">
+            <Button
+              onClick={() => setIsSelection((prev) => !prev)}
+              className={cn({ "bg-red-500": isSelection })}
+            >
+              {isSelection ? (
+                <>
+                  <X />
+                  Batalkan
+                </>
+              ) : (
+                <>
+                  <ListCheck />
+                  Cetak QRCode
+                </>
+              )}
+            </Button>
+            {isSelection && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Printer className="mr-2" />
+                    Cetak QRCode
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="print:static print:translate-x-0 print:translate-y-0 print:max-w-none print:w-full print:border-none print:shadow-none print:p-0">
+                  <DialogHeader className="print:hidden">
+                    <DialogTitle>Detail QrCode</DialogTitle>
+                  </DialogHeader>
+                  <div className="-mx-4 space-y-2 max-h-[50vh] no-scrollbar overflow-y-auto px-4 py-2 print:max-h-none print:overflow-visible print:space-y-0 print:p-0 print:m-0">
+                    {qrTags.map((qr, index) => (
+                      <Card
+                        key={index}
+                        className="p-2 print:border-none print:shadow-none print:w-full print:h-[100vh] print:flex print:items-center print:justify-center print:break-after-page"
+                      >
+                        <div className="print:scale-150">
+                          <AssetBarcode tag={qr} margin="mx-auto" />
+                        </div>
+                      </Card>
+                    ))}
                   </div>
-                </TableCell>
-              </TableRow>
+                  <DialogFooter className="print:hidden">
+                    <Button className="mx-auto" onClick={() => window.print()}>
+                      <Printer className="mr-2" />
+                      Cetak
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             )}
-          </TableBody>
-        </Table>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table className="w-full overflow-hidden border-t">
+            <TableHeader className="bg-muted sticky top-0 z-10">
+              <TableRow>
+                {isSelection && (
+                  <TableHead className="px-6 py-3">Check</TableHead>
+                )}
+                {ASSET_TABLE_HEADER.map((head, index) => (
+                  <TableHead key={`${head}-${index}`} className="px-6 py-3">
+                    {head}
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {assets?.map((asset) => (
+                <TableRow key={asset.id}>
+                  {isSelection && (
+                    <TableCell className="px-6 py-3">
+                      <Checkbox
+                        onCheckedChange={(checked) => {
+                          if (checked === true) {
+                            setQrTags((prev) => [...prev, asset.qr_tag]);
+                          } else {
+                            setQrTags((prev) =>
+                              prev.filter((item) => item !== asset.qr_tag)
+                            );
+                          }
+                        }}
+                      />
+                    </TableCell>
+                  )}
+                  <TableCell className="px-6 py-3">
+                    <Image
+                      width={0}
+                      height={0}
+                      src={asset.asset_image_url}
+                      alt={asset.name}
+                      className="w-12 h-12 rounded-md object-cover border"
+                    />
+                  </TableCell>
+                  <TableCell className="px-6 py-3">{asset.name}</TableCell>
+                  <TableCell className="px-6 py-3">
+                    {asset.category.name}
+                  </TableCell>
+                  <TableCell className="px-6 py-3">
+                    {asset.vendor.name}
+                  </TableCell>
+                  <TableCell className="px-6 py-3">
+                    {asset.current_location.name}
+                  </TableCell>
+                  <TableCell className="px-6 py-3">
+                    <Badge>{asset.status_asset}</Badge>
+                  </TableCell>
+                  <TableCell className="px-6 py-3">
+                    <ActionButton
+                      isDetail
+                      onDetailClick={() => {
+                        router.push(`/dashboard/operator/assets/${asset.id}`);
+                      }}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+              {assets?.length === 0 && !isLoading && (
+                <TableRow>
+                  <TableCell
+                    colSpan={ASSET_TABLE_HEADER.length}
+                    className="h-24 text-center"
+                  >
+                    Data belum tersedia
+                  </TableCell>
+                </TableRow>
+              )}
+              {isLoading && (
+                <TableRow>
+                  <TableCell
+                    colSpan={ASSET_TABLE_HEADER.length}
+                    className="h-24"
+                  >
+                    <div className="flex flex-col gap-2 justify-center items-center w-full">
+                      <Spinner />
+                      <span>Memuat...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
       </Card>
     </div>
   );

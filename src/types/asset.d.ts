@@ -58,5 +58,5 @@ type AssetPreview = Pick<
   | "asset_image_url"
   | "asset_image_path"
 > & {
-  qr_tag?: string;
+  qr_tag: string;
 };
