@@ -1,22 +1,7 @@
 "use client";
 
-import { Camera } from "@/components/commons/camera";
 import { PaginationButton } from "@/components/commons/pagination-button";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -27,31 +12,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DROPDOWN_MENUS,
-  MOVEMENTS_TABLE_HEADER,
-} from "@/constants/movements-constant";
+import { MOVEMENTS_TABLE_HEADER } from "@/constants/movements-constant";
 import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
 import useTotalPage from "@/hooks/use-total-page";
 import { createClient } from "@/lib/client";
 import { Movement as MovementType } from "@/types/movements";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
 import { toast } from "sonner";
 
 export function Movements() {
   const supabase = createClient();
   const { handleKeywordChange, keyword } = useSearch();
   const { limit, page, handleLimitChange, handlePageChange } = usePagination();
-  const { data: movements, isLoading } = useQuery<
-    Omit<MovementType, "notes" | "created_at">[] | null
-  >({
+  const { data: movements, isLoading } = useQuery<{
+    data: Omit<MovementType, "notes" | "created_at">[] | null;
+    count: number | null;
+  }>({
     queryKey: ["item_movements", keyword, page, limit],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error, count } = await supabase
         .from("asset_movements")
         .select(
           `
@@ -70,7 +51,8 @@ export function Movements() {
             pic:user_profiles!inner (
                 fullname
             )
-        `
+        `,
+          { count: "exact" }
         )
         .range((page - 1) * limit, page * limit - 1)
         .order("created_at")
@@ -80,7 +62,10 @@ export function Movements() {
         toast.error("Gagal", { description: error.message });
       }
 
-      return data as Omit<MovementType, "notes" | "created_at">[] | null;
+      return {
+        data: data as Omit<MovementType, "notes" | "created_at">[] | null,
+        count,
+      };
     },
   });
   const { totalPage } = useTotalPage(movements, limit);
@@ -112,7 +97,7 @@ export function Movements() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {movements?.map((movement) => (
+            {movements?.data?.map((movement) => (
               <TableRow key={movement.id}>
                 <TableCell className="px-6 py-3">
                   <Image
@@ -140,7 +125,7 @@ export function Movements() {
                 </TableCell>
               </TableRow>
             ))}
-            {movements?.length === 0 && !isLoading && (
+            {movements?.data?.length === 0 && !isLoading && (
               <TableRow>
                 <TableCell
                   colSpan={MOVEMENTS_TABLE_HEADER.length}

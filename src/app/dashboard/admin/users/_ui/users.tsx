@@ -107,7 +107,7 @@ export function AssetsUsers() {
           </TableHeader>
 
           <TableBody>
-            {users?.map((user, index) => (
+            {users?.data?.map((user, index) => (
               <TableRow key={user.id}>
                 <TableCell>
                   <Image
@@ -137,7 +137,7 @@ export function AssetsUsers() {
               </TableRow>
             ))}
 
-            {users?.length === 0 && !isLoading && (
+            {users?.data?.length === 0 && !isLoading && (
               <TableRow>
                 <TableCell
                   colSpan={USERS_TABLE_HEADER.length}

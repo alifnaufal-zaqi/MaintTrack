@@ -152,7 +152,7 @@ export function AssetsCategories() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {categories?.map((category, index) => (
+            {categories?.data?.map((category, index) => (
               <TableRow key={category.id}>
                 <TableCell className="px-6 py-3">{index + 1}</TableCell>
                 <TableCell className="px-6 py-3">{category.name}</TableCell>
@@ -172,7 +172,7 @@ export function AssetsCategories() {
                 </TableCell>
               </TableRow>
             ))}
-            {categories?.length === 0 && !isLoading && (
+            {categories?.data?.length === 0 && !isLoading && (
               <TableRow>
                 <TableCell
                   colSpan={CATEGORIES_TABLE_HEADER.length}

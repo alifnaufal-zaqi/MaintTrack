@@ -224,7 +224,7 @@ export function Vendors() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {vendors?.map((vendor, index) => (
+            {vendors?.data?.map((vendor, index) => (
               <TableRow key={vendor.id}>
                 <TableCell className="px-6 py-3">{index + 1}</TableCell>
                 <TableCell className="px-6 py-3">
@@ -277,7 +277,7 @@ export function Vendors() {
                 </TableCell>
               </TableRow>
             ))}
-            {vendors?.length === 0 && !isLoading && (
+            {vendors?.data?.length === 0 && !isLoading && (
               <TableRow>
                 <TableCell
                   colSpan={VENDORS_TABLE_HEADER.length}

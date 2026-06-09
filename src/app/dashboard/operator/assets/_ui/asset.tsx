@@ -90,7 +90,10 @@ export function ListAssetsPage_Operator() {
     },
   });
 
-  const { isLoading, data: assets } = useQuery<AssetPreview[] | null>({
+  const { isLoading, data: assets } = useQuery<{
+    data: AssetPreview[] | null;
+    count: number | null;
+  }>({
     queryKey: [
       "assets",
       page,
@@ -120,7 +123,8 @@ export function ListAssetsPage_Operator() {
           qr_tag,
           asset_image_url,
           asset_image_path
-        `
+        `,
+        { count: "exact" }
       );
 
       if (keyword) {
@@ -138,13 +142,13 @@ export function ListAssetsPage_Operator() {
       query = query
         .order("created_at")
         .range((page - 1) * limit, page * limit - 1);
-      const { data, error } = await query;
+      const { data, error, count } = await query;
 
       if (error) {
         toast.error("Gagal", { description: error.message });
       }
 
-      return data as AssetPreview[] | null;
+      return { data: data as AssetPreview[] | null, count };
     },
   });
   const { totalPage } = useTotalPage(assets, limit);
@@ -269,7 +273,7 @@ export function ListAssetsPage_Operator() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {assets?.map((asset) => (
+              {assets?.data?.map((asset) => (
                 <TableRow key={asset.id}>
                   {isSelection && (
                     <TableCell className="px-6 py-3">
@@ -318,7 +322,7 @@ export function ListAssetsPage_Operator() {
                   </TableCell>
                 </TableRow>
               ))}
-              {assets?.length === 0 && !isLoading && (
+              {assets?.data?.length === 0 && !isLoading && (
                 <TableRow>
                   <TableCell
                     colSpan={ASSET_TABLE_HEADER.length}

@@ -41,9 +41,10 @@ export function Maintenance() {
   const { page, limit, handleLimitChange, handlePageChange } = usePagination();
   const { keyword, handleKeywordChange } = useSearch();
   const [type, setType] = useState<(typeof MAINTENANCE_TYPE)[number]>("all");
-  const { data: maintenances, isLoading } = useQuery<
-    Omit<MaintenanceType, "notes">[] | null
-  >({
+  const { data: maintenances, isLoading } = useQuery<{
+    data: Omit<MaintenanceType, "notes">[] | null;
+    count: number | null;
+  }>({
     queryKey: ["maintenances", page, limit, keyword, type],
     queryFn: async () => {
       let query = supabase
@@ -63,7 +64,8 @@ export function Maintenance() {
               ),
               progress_status,
               created_at
-        `
+        `,
+          { count: "exact" }
         )
         .range((page - 1) * limit, page * limit - 1)
         .order("created_at", {
@@ -75,7 +77,7 @@ export function Maintenance() {
         query = query.eq("maintenance_type", type);
       }
 
-      const { data, error } = await query;
+      const { data: maintenances, error, count } = await query;
 
       if (error) {
         toast.error("Gagal", {
@@ -83,7 +85,10 @@ export function Maintenance() {
         });
       }
 
-      return data as Omit<MaintenanceType, "notes">[] | null;
+      return {
+        data: maintenances as Omit<MaintenanceType, "notes">[] | null,
+        count,
+      };
     },
   });
   const { totalPage } = useTotalPage(maintenances, limit);
@@ -136,7 +141,7 @@ export function Maintenance() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {maintenances?.map((maintenance) => (
+            {maintenances?.data?.map((maintenance) => (
               <TableRow key={maintenance.id}>
                 <TableCell className="px-6 py-3">
                   <Image
@@ -179,7 +184,7 @@ export function Maintenance() {
                 </TableCell>
               </TableRow>
             ))}
-            {maintenances?.length === 0 && !isLoading && (
+            {maintenances?.data?.length === 0 && !isLoading && (
               <TableRow>
                 <TableCell
                   colSpan={MAINTENANCE_TABLE_HEADER.length}

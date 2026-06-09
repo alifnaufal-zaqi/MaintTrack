@@ -20,10 +20,16 @@ export function useMasterData<T>({
   key,
 }: UseMasterDataType) {
   const supabase = createClient();
-  const { data, isLoading } = useQuery<T | null>({
+  const { data, isLoading } = useQuery<{
+    data: T | null;
+    count: number | null;
+  }>({
     queryKey: [...key],
     queryFn: async () => {
-      const query = supabase.from(table).select(select).order("created_at");
+      const query = supabase
+        .from(table)
+        .select(select, { count: "exact" })
+        .order("created_at");
 
       if (offset) {
         query.range(offset.from, offset.to);
@@ -37,7 +43,7 @@ export function useMasterData<T>({
         query.eq(where.col, where.value).single();
       }
 
-      const { data, error } = await query;
+      const { data, error, count } = await query;
 
       if (error) {
         toast.error("Gagal", {
@@ -45,7 +51,7 @@ export function useMasterData<T>({
         });
       }
 
-      return data as T;
+      return { data: data as T, count };
     },
   });
 

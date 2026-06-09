@@ -60,9 +60,10 @@ export function Maintenance() {
   const router = useRouter();
   const { keyword, handleKeywordChange } = useSearch();
   const [type, setType] = useState<(typeof MAINTENANCE_TYPE)[number]>("all");
-  const { data: maintenances, isLoading } = useQuery<
-    Omit<Maintenance, "notes">[] | null
-  >({
+  const { data: maintenances, isLoading } = useQuery<{
+    data: Omit<Maintenance, "notes">[] | null;
+    count: number | null;
+  }>({
     queryKey: ["maintenances", page, limit, keyword, type],
     queryFn: async () => {
       let query = supabase
@@ -82,8 +83,10 @@ export function Maintenance() {
               ),
               progress_status,
               created_at
-        `
+        `,
+          { count: "exact" }
         )
+        .neq("progress_status", "complete")
         .range((page - 1) * limit, page * limit - 1)
         .order("created_at", {
           ascending: false,
@@ -94,7 +97,7 @@ export function Maintenance() {
         query = query.eq("maintenance_type", type);
       }
 
-      const { data, error } = await query;
+      const { data, error, count } = await query;
 
       if (error) {
         toast.error("Gagal", {
@@ -102,7 +105,7 @@ export function Maintenance() {
         });
       }
 
-      return data as Omit<Maintenance, "notes">[] | null;
+      return { data: data as Omit<Maintenance, "notes">[] | null, count };
     },
   });
   const { totalPage } = useTotalPage(maintenances, limit);
@@ -201,7 +204,7 @@ export function Maintenance() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {maintenances?.map((maintenance) => (
+            {maintenances?.data?.map((maintenance) => (
               <TableRow key={maintenance.id}>
                 <TableCell className="px-6 py-3">
                   <Image
@@ -225,9 +228,7 @@ export function Maintenance() {
                   <Badge
                     className="capitalize"
                     variant={
-                      maintenance.progress_status === "complete"
-                        ? "default"
-                        : maintenance.progress_status === "process"
+                      maintenance.progress_status === "process"
                         ? "secondary"
                         : "outline"
                     }
@@ -273,7 +274,7 @@ export function Maintenance() {
                 </TableCell>
               </TableRow>
             ))}
-            {maintenances?.length === 0 && !isLoading && (
+            {maintenances?.data?.length === 0 && !isLoading && (
               <TableRow>
                 <TableCell
                   colSpan={MAINTENANCE_TABLE_HEADER.length}

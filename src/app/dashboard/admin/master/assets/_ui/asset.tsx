@@ -51,10 +51,13 @@ export function ListAssetsPage() {
     update: false,
   });
   const [selectedAsset, setSelectedAsset] = useState<AssetPreview | null>();
-  const { isLoading, data: assets } = useQuery<AssetPreview[] | null>({
+  const { isLoading, data: assets } = useQuery<{
+    data: AssetPreview[] | null;
+    count: number | null;
+  }>({
     queryKey: ["assets", page, limit, keyword],
     queryFn: async () => {
-      const { error, data } = await supabase
+      const { error, data, count } = await supabase
         .from("assets")
         .select(
           `
@@ -75,7 +78,8 @@ export function ListAssetsPage() {
           status_asset,
           asset_image_url,
           asset_image_path
-        `
+        `,
+          { count: "exact" }
         )
         .range((page - 1) * limit, page * limit - 1)
         .order("created_at")
@@ -85,7 +89,7 @@ export function ListAssetsPage() {
         toast.error("Gagal", { description: error.message });
       }
 
-      return data as AssetPreview[] | null;
+      return { data: data as AssetPreview[] | null, count };
     },
   });
   const { mutate: mutationDelete, isPending: deleteLoading } = useMutation({
@@ -147,7 +151,7 @@ export function ListAssetsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {assets?.map((asset) => (
+            {assets?.data?.map((asset) => (
               <TableRow key={asset.id}>
                 <TableCell className="px-6 py-3">
                   <Image
@@ -185,7 +189,7 @@ export function ListAssetsPage() {
                 </TableCell>
               </TableRow>
             ))}
-            {assets?.length === 0 && !isLoading && (
+            {assets?.data?.length === 0 && !isLoading && (
               <TableRow>
                 <TableCell
                   colSpan={ASSET_TABLE_HEADER.length}
