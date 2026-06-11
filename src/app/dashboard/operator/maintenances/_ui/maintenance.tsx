@@ -157,7 +157,7 @@ export function Maintenance() {
                 key={`${item}-${index}`}
                 className="capitalize"
               >
-                {item === "all" ? "Semua" : item}
+                {item === "all" ? "Semua Tipe" : item}
               </SelectItem>
             ))}
           </SelectContent>
@@ -256,7 +256,7 @@ export function Maintenance() {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() =>
-                          handleUpdateStatus(maintenance.id, "procsess")
+                          handleUpdateStatus(maintenance.id, "process")
                         }
                       >
                         Proses

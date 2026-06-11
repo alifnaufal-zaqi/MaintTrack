@@ -117,7 +117,7 @@ export function Maintenance() {
                 key={`${item}-${index}`}
                 className="capitalize"
               >
-                {item === "all" ? "Semua" : item}
+                {item === "all" ? "All Tipe" : item}
               </SelectItem>
             ))}
           </SelectContent>

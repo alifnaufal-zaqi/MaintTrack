@@ -3,6 +3,7 @@
 import { ActionButton } from "@/components/commons/action-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Filter, MapIcon, Tag } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
@@ -169,10 +170,11 @@ export function ListAssetsPage_Operator() {
             onValueChange={(value) => setSelectedCategory(value)}
           >
             <SelectTrigger size="sm" className="w-44">
+              <Tag className="w-4 h-4 mr-2" />
               <SelectValue placeholder="Kategori" />
             </SelectTrigger>
             <SelectContent id="category">
-              <SelectItem value="all">Semua</SelectItem>
+              <SelectItem value="all">Semua Kategori</SelectItem>
               {categories?.map((category) => (
                 <SelectItem key={category.id} value={category.id}>
                   {category.name}
@@ -186,10 +188,11 @@ export function ListAssetsPage_Operator() {
             onValueChange={(value) => setSelectedLocation(value)}
           >
             <SelectTrigger size="sm" className="w-44">
+              <MapIcon className="w-4 h-4 mr-2" />
               <SelectValue placeholder="Lokasi" />
             </SelectTrigger>
             <SelectContent id="location">
-              <SelectItem value="all">Semua</SelectItem>
+              <SelectItem value="all">Semua Lokasi</SelectItem>
               {locations?.map((location) => (
                 <SelectItem key={location.id} value={location.id}>
                   {location.name}

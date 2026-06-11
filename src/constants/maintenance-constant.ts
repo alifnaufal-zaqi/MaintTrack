@@ -9,6 +9,6 @@ export const MAINTENANCE_TABLE_HEADER = [
   "aksi",
 ];
 
-export const MAINTENANCE_TYPE = ["perbaikan", "rutin", "all"] as const;
+export const MAINTENANCE_TYPE = ["Perbaikan", "Rutin", "all"] as const;
 
 export const MAINTENANCE_STATUS = ["process", "complete", "pending"];

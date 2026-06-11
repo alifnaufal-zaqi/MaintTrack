@@ -165,7 +165,7 @@ export function Location() {
             <span>
               <Plus />
             </span>
-            Buat lokasi
+            Tambah lokasi
           </Button>
         </Link>
       </Card>

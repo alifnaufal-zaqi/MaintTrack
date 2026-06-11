@@ -102,7 +102,7 @@ export function FormLocations() {
                   type="text"
                   id="name"
                   name="name"
-                  placeholder="Masukan nama kategori aset"
+                  placeholder="Masukan nama lokasi"
                 />
                 {formError?.name && (
                   <FieldError>{formError.name[0]}</FieldError>

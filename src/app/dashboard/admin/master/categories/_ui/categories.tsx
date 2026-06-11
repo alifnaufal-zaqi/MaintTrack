@@ -132,7 +132,7 @@ export function AssetsCategories() {
             <span>
               <Plus />
             </span>
-            Buat kategori
+            Tambah kategori
           </Button>
         </Link>
       </Card>
