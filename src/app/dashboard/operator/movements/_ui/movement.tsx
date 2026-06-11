@@ -57,12 +57,13 @@ export function AssetMovement() {
     scan: boolean;
     input: boolean;
   }>({ input: false, scan: false });
-  const { data: movements, isLoading } = useQuery<
-    Omit<Movement, "notes" | "created_at">[] | null
-  >({
+  const { data: movements, isLoading } = useQuery<{
+    data: Omit<Movement, "notes" | "created_at">[] | null;
+    count: number | null;
+  }>({
     queryKey: ["item_movements", keyword, page, limit],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error, count } = await supabase
         .from("asset_movements")
         .select(
           `
@@ -81,7 +82,8 @@ export function AssetMovement() {
             pic:user_profiles!inner (
                 fullname
             )
-        `
+        `,
+          { count: "exact" }
         )
         .range((page - 1) * limit, page * limit - 1)
         .order("created_at")
@@ -91,7 +93,10 @@ export function AssetMovement() {
         toast.error("Gagal", { description: error.message });
       }
 
-      return data as Omit<Movement, "notes" | "created_at">[] | null;
+      return {
+        data: data as Omit<Movement, "notes" | "created_at">[] | null,
+        count,
+      };
     },
   });
   const { totalPage } = useTotalPage(movements, limit);
@@ -157,7 +162,7 @@ export function AssetMovement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {movements?.map((movement) => (
+            {movements?.data?.map((movement) => (
               <TableRow key={movement.id}>
                 <TableCell className="px-6 py-3">
                   <Image
@@ -185,7 +190,7 @@ export function AssetMovement() {
                 </TableCell>
               </TableRow>
             ))}
-            {movements?.length === 0 && !isLoading && (
+            {movements?.data?.length === 0 && !isLoading && (
               <TableRow>
                 <TableCell
                   colSpan={MOVEMENTS_TABLE_HEADER.length}

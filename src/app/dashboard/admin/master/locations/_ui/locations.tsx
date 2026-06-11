@@ -185,7 +185,7 @@ export function Location() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {locations?.map((location, index) => (
+            {locations?.data?.map((location, index) => (
               <TableRow key={location.id}>
                 <TableCell className="px-6 py-3">{index + 1}</TableCell>
                 <TableCell className="px-6 py-3">{location.name}</TableCell>
@@ -209,7 +209,7 @@ export function Location() {
                 </TableCell>
               </TableRow>
             ))}
-            {locations?.length === 0 && !isLoading && (
+            {locations?.data?.length === 0 && !isLoading && (
               <TableRow>
                 <TableCell
                   colSpan={LOCATIONS_TABLE_HEADER.length}
