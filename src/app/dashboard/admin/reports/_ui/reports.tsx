@@ -20,27 +20,71 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { REPORTS_TABLE_HEADER } from "@/constants/reports-constant";
-import { STATUS_ASSET } from "@/constants/asset-constant";
-import { Filter, CalendarDays } from "lucide-react";
+import { Filter, Download } from "lucide-react";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import usePagination from "@/hooks/use-pagination";
+import { createClient } from "@/lib/client";
+import { toast } from "sonner";
+import { History } from "@/types/history";
+import { getCurrentMonthBounds } from "@/utils/get-current-mount-bound";
+import { Spinner } from "@/components/ui/spinner";
+import Image from "next/image";
 
 const ACTIVITY_TYPES = ["maintenance", "movement"] as const;
-
 type ActivityType = (typeof ACTIVITY_TYPES)[number];
 
-const reportRows = [] as Array<{
-  id: string;
-  image: string;
-  name: string;
-  category: string;
-  status: string;
-}>;
-
 export function Reports() {
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const supabase = createClient();
+  const { first, last } = getCurrentMonthBounds();
+  const [startDate, setStartDate] = useState(first);
+  const [endDate, setEndDate] = useState(last);
   const [activityType, setActivityType] = useState<ActivityType>("maintenance");
-  const [statusAsset, setStatusAsset] = useState<string>("all");
+  const { limit, page } = usePagination();
+  const { data: historys, isLoading } = useQuery<{
+    data: History[] | null;
+    count: number | null;
+  }>({
+    queryKey: ["historys", page, limit, activityType, startDate, endDate],
+    queryFn: async () => {
+      const { count, data, error } = await supabase
+        .from("historys")
+        .select(
+          `
+            id,
+            activity_type,
+            created_at,
+            asset:assets (
+              name,
+              category:categories (
+                id,
+                name
+              ),
+              asset_image_url,
+              status_asset
+            )
+        `,
+          { count: "exact" }
+        )
+        .eq("activity_type", activityType)
+        .gte("created_at", startDate)
+        .lte("created_at", endDate)
+        .range((page - 1) * limit, page * limit - 1)
+        .order("created_at");
+
+      if (error) {
+        toast.error("Gagal", { description: error.message });
+      }
+
+      return {
+        data: data as unknown as History[],
+        count,
+      };
+    },
+  });
+
+  // Handle download laporan dalam bentuk excel
+  const handleExportReport = async () => {};
 
   return (
     <div className="w-full space-y-4">
@@ -48,9 +92,11 @@ export function Reports() {
 
       <Card className="p-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="grid w-full gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid w-full gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Tanggal mulai</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Tanggal mulai
+              </p>
               <Input
                 type="date"
                 value={startDate}
@@ -59,7 +105,9 @@ export function Reports() {
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Tanggal selesai</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Tanggal selesai
+              </p>
               <Input
                 type="date"
                 value={endDate}
@@ -67,11 +115,15 @@ export function Reports() {
               />
             </div>
 
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Tipe aktivitas</p>
+            <div className="space-y-2 md:col-span-1 col-span-2">
+              <p className="text-sm font-medium text-muted-foreground">
+                Tipe aktivitas
+              </p>
               <Select
                 value={activityType}
-                onValueChange={(value) => setActivityType(value as ActivityType)}
+                onValueChange={(value) =>
+                  setActivityType(value as ActivityType)
+                }
               >
                 <SelectTrigger size="sm" className="w-full">
                   <Filter className="mr-2 h-4 w-4" />
@@ -86,27 +138,10 @@ export function Reports() {
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Status aset</p>
-              <Select value={statusAsset} onValueChange={(value) => setStatusAsset(value)}>
-                <SelectTrigger size="sm" className="w-full">
-                  <CalendarDays className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Semua status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua status</SelectItem>
-                  {STATUS_ASSET.map((item) => (
-                    <SelectItem key={item} value={item} className="capitalize">
-                      {item}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
           <Button variant="outline" className="w-full sm:w-auto">
+            <Download />
             Export
           </Button>
         </div>
@@ -124,30 +159,54 @@ export function Reports() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {reportRows.length === 0 ? (
+            {historys?.data?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={REPORTS_TABLE_HEADER.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={REPORTS_TABLE_HEADER.length}
+                  className="h-24 text-center"
+                >
                   Data belum tersedia
                 </TableCell>
               </TableRow>
-            ) : (
-              reportRows.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell className="px-6 py-3">
-                    <img
-                      alt={row.name}
-                      src={row.image}
-                      className="w-12 h-12 rounded-md border object-cover"
-                    />
-                  </TableCell>
-                  <TableCell className="px-6 py-3">{row.name}</TableCell>
-                  <TableCell className="px-6 py-3">{row.category}</TableCell>
-                  <TableCell className="px-6 py-3">
-                    <Badge className="capitalize">{row.status}</Badge>
-                  </TableCell>
-                </TableRow>
-              ))
             )}
+            {isLoading && (
+              <TableRow>
+                <TableCell
+                  colSpan={REPORTS_TABLE_HEADER.length}
+                  className="h-24"
+                >
+                  <div className="flex flex-col gap-2 justify-center items-center w-full">
+                    <Spinner />
+                    <span>Memuat...</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            )}
+            {historys?.data?.map((history, index) => (
+              <TableRow key={history?.id}>
+                <TableCell className="px-6 py-3">{index + 1}</TableCell>
+                <TableCell className="px-6 py-3">
+                  <Image
+                    width={0}
+                    height={0}
+                    alt={history?.asset?.name ?? ""}
+                    src={history?.asset?.asset_image_url ?? ""}
+                    className="w-12 h-12 rounded-md border object-cover border"
+                  />
+                </TableCell>
+                <TableCell className="px-6 py-3">
+                  {history?.asset?.name}
+                </TableCell>
+                <TableCell className="px-6 py-3">
+                  {history?.asset?.category?.name}
+                </TableCell>
+                <TableCell className="px-6 py-3">
+                  <Badge className="capitalize">
+                    {history?.asset?.status_asset}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </Card>

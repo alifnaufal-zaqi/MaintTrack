@@ -47,7 +47,7 @@ export function DetailAsset({ id }: { id: string }) {
             id,
             name
           ),
-          status,
+          status_asset,
           asset_image_url
         `
         )

@@ -61,8 +61,8 @@ export function FormMovement() {
       const { error: insertError } = await supabase
         .from("asset_movements")
         .insert({
-          asset_id: data?.id,
-          from_location_id: data?.current_location.id,
+          asset_id: data?.data?.id,
+          from_location_id: data?.data?.current_location.id,
           to_location_id: movement.toLocation,
           pic: profile?.id,
         });
@@ -72,7 +72,7 @@ export function FormMovement() {
       const { error: updateError } = await supabase
         .from("assets")
         .update({ current_location_id: movement.toLocation })
-        .eq("id", data?.id);
+        .eq("id", data?.data?.id);
 
       if (updateError) throw updateError;
     },
@@ -101,7 +101,7 @@ export function FormMovement() {
 
     setFormError(null);
     mutate({
-      fromLocation: data.current_location.id,
+      fromLocation: data?.data?.current_location.id ?? "",
       notes: result.notes ? result.notes : null,
       pic: profile!.id,
       toLocation: result.toLocation,
@@ -114,16 +114,18 @@ export function FormMovement() {
         <CardTitle>Informasi Aset</CardTitle>
         <div className="flex flex-row gap-4 items-center mt-4">
           <Image
-            alt={data.name}
-            src={data.asset_image_url}
+            alt={data?.data?.name ?? ""}
+            src={data?.data?.asset_image_url ?? ""}
             width={0}
             height={0}
             className="w-16 h-16 border rounded-md"
           />
 
           <div className="space-y-1">
-            <h2 className="text-lg text-primary font-semibold">{data.name}</h2>
-            <p className="text-md font-light">ID: {data.id}</p>
+            <h2 className="text-lg text-primary font-semibold">
+              {data?.data?.name ?? ""}
+            </h2>
+            <p className="text-md font-light">ID: {data?.data?.id ?? ""}</p>
           </div>
         </div>
       </CardHeader>
@@ -134,7 +136,7 @@ export function FormMovement() {
             <FieldGroup>
               <FieldInput
                 error={formError?.fromLocation?.[0]}
-                value={data.current_location.name}
+                value={data?.data?.current_location.name}
                 name="fromLocation"
                 id="fromLocation"
                 label="Lokasi Asal"
@@ -147,7 +149,7 @@ export function FormMovement() {
                 label="Lokasi Tujuan"
                 error={formError?.toLocation?.[0]}
               >
-                {locations.map((location) => (
+                {locations?.data?.map((location) => (
                   <SelectItem value={location.id} key={location.id}>
                     {location.name}
                   </SelectItem>

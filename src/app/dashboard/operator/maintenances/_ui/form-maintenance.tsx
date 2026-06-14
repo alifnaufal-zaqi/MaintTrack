@@ -63,7 +63,7 @@ export function FormMaintenance() {
       >
     ) => {
       const { error } = await supabase.from("maintenances").insert({
-        asset_id: asset!.id,
+        asset_id: asset!.data?.id,
         maintenance_date: maintenance.maintenance_date,
         maintenance_type: maintenance.maintenance_type,
         cost: maintenance.cost,
@@ -113,16 +113,18 @@ export function FormMaintenance() {
         <CardTitle>Informasi Aset</CardTitle>
         <div className="flex flex-row gap-4 items-center mt-4">
           <Image
-            alt={asset.name}
-            src={asset.asset_image_url}
+            alt={asset?.data?.name ?? ""}
+            src={asset?.data?.asset_image_url ?? ""}
             width={0}
             height={0}
             className="w-16 h-16 border rounded-md"
           />
 
           <div className="space-y-1">
-            <h2 className="text-lg text-primary font-semibold">{asset.name}</h2>
-            <p className="text-md font-light">ID: {asset.id}</p>
+            <h2 className="text-lg text-primary font-semibold">
+              {asset?.data?.name}
+            </h2>
+            <p className="text-md font-light">ID: {asset?.data?.id}</p>
           </div>
         </div>
       </CardHeader>
