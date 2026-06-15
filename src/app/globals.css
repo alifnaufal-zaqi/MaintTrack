@@ -131,12 +131,9 @@
   html {
     @apply font-sans;
   }
-
-  /* Primary color default shadcn: oklch(0.205 0 0) */
 }
 
 @media print {
-  /* 1. Reset body dan pastikan tidak ada margin bawaan browser */
   html,
   body {
     overflow: visible !important;
@@ -145,17 +142,14 @@
     padding: 0 !important;
   }
 
-  /* 2. Sembunyikan SEMUA elemen yang langsung berada di bawah body (Aplikasi Utama Anda) */
   body > * {
     display: none !important;
   }
 
-  /* 3. Pengecualian: Tampilkan KEMBALI elemen Portal milik Radix UI (Tempat modal berada) */
   body > [data-radix-portal] {
     display: block !important;
   }
 
-  /* 4. Sembunyikan background overlay hitam milik modal */
   [data-aria-hidden="true"],
   [data-radix-focus-guard],
   .bg-black\/80 {

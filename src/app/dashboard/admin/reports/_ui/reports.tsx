@@ -26,10 +26,15 @@ import { useQuery } from "@tanstack/react-query";
 import usePagination from "@/hooks/use-pagination";
 import { createClient } from "@/lib/client";
 import { toast } from "sonner";
-import { History } from "@/types/history";
+import {
+  ExportMaintenanceReport,
+  ExportMovementReport,
+  History,
+} from "@/types/history";
 import { getCurrentMonthBounds } from "@/utils/get-current-mount-bound";
 import { Spinner } from "@/components/ui/spinner";
 import Image from "next/image";
+import * as XLSX from "xlsx";
 
 const ACTIVITY_TYPES = ["maintenance", "movement"] as const;
 type ActivityType = (typeof ACTIVITY_TYPES)[number];
@@ -40,6 +45,7 @@ export function Reports() {
   const [startDate, setStartDate] = useState(first);
   const [endDate, setEndDate] = useState(last);
   const [activityType, setActivityType] = useState<ActivityType>("maintenance");
+  const [isExporting, setIsExporting] = useState<boolean>(false);
   const { limit, page } = usePagination();
   const { data: historys, isLoading } = useQuery<{
     data: History[] | null;
@@ -84,7 +90,114 @@ export function Reports() {
   });
 
   // Handle download laporan dalam bentuk excel
-  const handleExportReport = async () => {};
+  const handleExportReport = async () => {
+    setIsExporting(true);
+    let data: unknown[];
+
+    if (activityType === "maintenance") {
+      const { data: maintenances, error } = await supabase
+        .from("maintenances")
+        .select(
+          `
+          id,
+          asset:assets!inner (
+            name,
+            category:categories (
+              name
+            ),
+            vendor:vendors (
+              name
+            ),
+            status_asset
+          ),
+          maintenance_date,
+          maintenance_type,
+          cost,
+          pic:user_profiles (
+            fullname
+          ),
+          progress_status
+        `
+        );
+
+      if (error) {
+        toast.error("Gagal", { description: error.message });
+        return;
+      }
+
+      data = (maintenances as unknown as ExportMaintenanceReport[]).map(
+        (item, index) => ({
+          No: index + 1,
+          "Id History": item.id,
+          "Nama Aset": item.asset.name,
+          "Status Aset": item.asset.status_asset,
+          "Kategori Aset": item.asset.category.name,
+          "Vendor Aset": item.asset.vendor.name,
+          "Biaya Maintenance": item.cost,
+          "Tanggal Maintenance": item.maintenance_date,
+          "Jenis Maintenance": item.maintenance_type,
+          "Progress Maintenance": item.progress_status,
+          PIC: item.pic.fullname,
+        })
+      );
+    } else {
+      const { data: movements, error } = await supabase
+        .from("asset_movements")
+        .select(
+          `
+          id,
+          movement_date,
+          from_location:locations!asset_movements_from_location_id_fkey (
+            name
+          ),
+          to_location:locations!asset_movements_to_location_id_fkey (
+            name
+          ),
+          asset:assets!inner (
+            name,
+            category:categories (
+              name
+            ),
+            vendor:vendors (
+              name
+            ),
+            status_asset
+          ),
+          pic:user_profiles (
+            fullname
+          )
+        `
+        );
+
+      if (error) {
+        toast.error("Gagal", { description: error.message });
+        return;
+      }
+
+      data = (movements as unknown as ExportMovementReport[]).map(
+        (item, index) => ({
+          No: index + 1,
+          "Nama Aset": item.asset.name,
+          "Status Aset": item.asset.status_asset,
+          "Kategori Aset": item.asset.category.name,
+          "Vendor Aset": item.asset.vendor.name,
+          "Lokasi Asal": item.from_location.name,
+          "Lokasi Tujuan": item.to_location.name,
+          "Tanggal Pindah": item.movement_date,
+          PIC: item.pic.fullname,
+        })
+      );
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan");
+
+    const today = new Date().toISOString().split("T")[0];
+    XLSX.writeFile(workbook, `Laporan-${today}.xlsx`);
+
+    setIsExporting(false);
+  };
 
   return (
     <div className="w-full space-y-4">
@@ -140,9 +253,19 @@ export function Reports() {
             </div>
           </div>
 
-          <Button variant="outline" className="w-full sm:w-auto">
-            <Download />
-            Export
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={handleExportReport}
+          >
+            {isExporting ? (
+              <Spinner />
+            ) : (
+              <>
+                <Download />
+                Export
+              </>
+            )}
           </Button>
         </div>
       </Card>
