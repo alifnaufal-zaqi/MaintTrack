@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, SubmitEvent, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -35,14 +35,16 @@ import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
 import { createClient } from "@/lib/client";
 import type { Maintenance } from "@/types/maintenance";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Filter, MoreVertical, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -52,13 +54,26 @@ import { useQrStore } from "@/lib/stores/qr-store";
 import { useRouter } from "next/navigation";
 import useTotalPage from "@/hooks/use-total-page";
 import { PaginationButton } from "@/components/commons/pagination-button";
+import { FieldGroup, FieldSet } from "@/components/ui/field";
+import { FieldInput } from "@/components/commons/field-input";
+import { validateFormData } from "@/utils/validate-data";
+import { CompleteMaintenanceSchema } from "@/schemas/maintenance";
 
 export function Maintenance() {
   const supabase = createClient();
+  const queryClient = useQueryClient();
   const { page, limit, handleLimitChange, handlePageChange } = usePagination();
   const setQrTag = useQrStore((state) => state.setTag);
   const router = useRouter();
   const { keyword, handleKeywordChange } = useSearch();
+  const [formError, setFormError] = useState<{
+    cost?: string[] | undefined;
+  } | null>(null);
+  const [isCompleteDialogOpen, setIsCompleteDialogOpen] =
+    useState<boolean>(false);
+  const [selectedMaintenance, setSelectedMaintenance] = useState<string | null>(
+    null
+  );
   const [type, setType] = useState<(typeof MAINTENANCE_TYPE)[number]>("all");
   const { data: maintenances, isLoading } = useQuery<{
     data: Omit<Maintenance, "notes">[] | null;
@@ -110,27 +125,52 @@ export function Maintenance() {
   });
   const { totalPage } = useTotalPage(maintenances, limit);
 
-  const handleUpdateStatus = async (id: string, status: string) => {
-    const { error } = await supabase
-      .from("maintenances")
-      .update({
-        progress_status: status,
-      })
-      .eq("id", id);
+  const { mutate, isPending: loading } = useMutation({
+    mutationFn: async ({
+      maintenanceId,
+      cost,
+      status,
+    }: {
+      maintenanceId: string;
+      status: string;
+      cost?: number;
+    }) => {
+      const { error } = await supabase
+        .from("maintenances")
+        .update({ progress_status: status, ...(cost && { cost }) })
+        .eq("id", maintenanceId);
+
+      if (error) throw error;
+    },
+    onError: (error) => toast.error("Gagal", { description: error.message }),
+    onSuccess: () => {
+      setIsCompleteDialogOpen(false);
+      toast.success("Berhasil", {
+        description: "Berhasil menyelesaikan maintenance",
+      });
+      queryClient.invalidateQueries({ queryKey: ["maintenances"] });
+    },
+  });
+
+  const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const { error, result } = validateFormData(
+      formData,
+      CompleteMaintenanceSchema
+    );
 
     if (error) {
-      toast.error("Gagal", {
-        description: error.message,
-      });
-
+      setFormError(error);
       return;
     }
 
-    toast.success("Berhasil", {
-      description: "Status maintenance berhasil diperbarui",
+    setFormError(null);
+    mutate({
+      maintenanceId: selectedMaintenance!,
+      status: "complete",
+      cost: parseInt(result.cost),
     });
-
-    window.location.reload();
   };
 
   return (
@@ -250,22 +290,19 @@ export function Maintenance() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
                         onClick={() =>
-                          handleUpdateStatus(maintenance.id, "pending")
-                        }
-                      >
-                        Pending
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          handleUpdateStatus(maintenance.id, "process")
+                          mutate({
+                            maintenanceId: maintenance.id,
+                            status: "process",
+                          })
                         }
                       >
                         Proses
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() =>
-                          handleUpdateStatus(maintenance.id, "complete")
-                        }
+                        onClick={() => {
+                          setSelectedMaintenance(maintenance.id);
+                          setIsCompleteDialogOpen(true);
+                        }}
                       >
                         Selesai
                       </DropdownMenuItem>
@@ -308,6 +345,45 @@ export function Maintenance() {
         onChangePage={handlePageChange}
         totalPages={totalPage}
       />
+
+      <Dialog
+        open={isCompleteDialogOpen}
+        onOpenChange={(value) => setIsCompleteDialogOpen(value)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Menyelesaikan Maintenance</DialogTitle>
+            <DialogDescription>
+              Untuk Menyelesaikan Maintenance Anda harus Mengisi Form dibawah
+              Ini Terlebih Dahulu
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit}>
+            <FieldSet>
+              <FieldGroup>
+                <FieldInput
+                  error={formError?.cost?.[0]}
+                  id="cost"
+                  label="Biaya Maintenance"
+                  type="number"
+                  name="cost"
+                  placeholder="Masukan biaya maintenance"
+                />
+              </FieldGroup>
+            </FieldSet>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant={"secondary"}>
+                  Tutup
+                </Button>
+              </DialogClose>
+              <Button type="submit" disabled={loading}>
+                {loading ? <Spinner /> : "Selesaikan"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

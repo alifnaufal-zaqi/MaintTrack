@@ -97,7 +97,7 @@ export function FormMaintenance() {
     setFormError(null);
     mutate({
       maintenance_date: result.date,
-      cost: parseInt(result.cost),
+      cost: 0,
       maintenance_type: result.type,
       notes: result.notes || null,
     });
@@ -158,14 +158,6 @@ export function FormMaintenance() {
                   )
                 )}
               </FieldSelect>
-              <FieldInput
-                error={formError?.cost?.[0]}
-                id="cost"
-                label="Biaya Maintenance"
-                type="number"
-                name="cost"
-                placeholder="Masukan biaya maintenance"
-              />
               <Field data-invalid={Boolean(formError?.notes?.[0])}>
                 <FieldLabel htmlFor="notes">Catatan</FieldLabel>
                 <Textarea

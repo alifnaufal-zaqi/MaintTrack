@@ -12,13 +12,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Field, FieldGroup, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
@@ -41,7 +36,7 @@ import { createClient } from "@/lib/client";
 import { useQrStore } from "@/lib/stores/qr-store";
 import { Movement } from "@/types/movements";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, QrCode } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { SubmitEvent, useEffect, useState } from "react";
@@ -120,31 +115,28 @@ export function AssetMovement() {
           placeholder="Cari data perpindahan"
           onChange={(event) => handleKeywordChange(event.target.value)}
         />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        <Dialog>
+          <DialogTrigger asChild>
             <Button>
-              Tambah
-              <ChevronDown />
+              <QrCode className="w-4 h-4 mr-2" />
+              Scan QR
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent side="bottom" className="w-36">
-            {DROPDOWN_MENUS.map((menu, index) => (
-              <DropdownMenuItem
-                key={`${menu.label}-${index}`}
-                onClick={() => {
-                  if (menu.label === "QRCode") {
-                    setDialogState((prev) => ({ ...prev, scan: true }));
-                  } else {
-                    setDialogState((prev) => ({ ...prev, input: true }));
-                  }
-                }}
-              >
-                <menu.icon />
-                <span>{menu.label}</span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Scan QRCode Aset</DialogTitle>
+              <DialogDescription>
+                Scan QRCode Aset anda disini
+              </DialogDescription>
+            </DialogHeader>
+            <Camera
+              onQrTagChange={(tag) => {
+                setQrTag(tag);
+                router.push("/dashboard/operator/movements/create");
+              }}
+            />
+          </DialogContent>
+        </Dialog>
       </Card>
 
       <Card className="p-0">
