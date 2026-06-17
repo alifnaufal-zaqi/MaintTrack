@@ -134,7 +134,7 @@ export function FormCreateAsset() {
                 name="category"
                 error={formError?.category?.[0]}
               >
-                {categories?.map((category) => (
+                {categories?.data?.map((category) => (
                   <SelectItem value={category.id} key={category.id}>
                     {category.name}
                   </SelectItem>
@@ -146,7 +146,7 @@ export function FormCreateAsset() {
                 name="vendor"
                 error={formError?.vendor?.[0]}
               >
-                {vendors?.map((vendor) => (
+                {vendors?.data?.map((vendor) => (
                   <SelectItem value={vendor.id} key={vendor.id}>
                     {vendor.name}
                   </SelectItem>
@@ -158,7 +158,7 @@ export function FormCreateAsset() {
                 name="location"
                 error={formError?.location?.[0]}
               >
-                {locations?.map((location) => (
+                {locations?.data?.map((location) => (
                   <SelectItem value={location.id} key={location.id}>
                     {location.name}
                   </SelectItem>

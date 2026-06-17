@@ -48,7 +48,12 @@ export async function updateProfile(
 
   const { error: updateProfileError } = await supabase
     .from("user_profiles")
-    .update({ email: result.email })
+    .update({
+      email: result.email,
+      fullname: result.fullname,
+      phone_number: result.phone,
+      address: result.address,
+    })
     .eq("user_id", userId);
 
   if (updateProfileError) {
@@ -58,7 +63,7 @@ export async function updateProfile(
     };
   }
 
-  revalidatePath("/", "layout");
+  revalidatePath("/profiles", "page");
 
   return {
     status: "success",

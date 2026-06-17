@@ -9,34 +9,124 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/lib/client";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { Profile } from "@/types/auth";
 import { getUrlImage } from "@/utils/get-url-image";
 import { uploadFileToStorage } from "@/utils/upload-file";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, Pencil, UserCog } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChangeEvent, useActionState, useEffect } from "react";
+import { ChangeEvent, FormEvent } from "react";
 import { toast } from "sonner";
 
+// Helper to map Supabase snake_case response to camelCase Profile type
+function mapToProfile(data: Record<string, unknown>): Omit<Profile, "userId"> {
+  return {
+    id: data.id as string,
+    fullname: data.fullname as string,
+    email: data.email as string,
+    phoneNumber: data.phone_number as string,
+    address: data.address as string,
+    photoProfileUrl: data.photo_profile_url as string,
+    photoProfilePath: data.photo_profile_path as string,
+    role: data.role as "admin" | "operator",
+    createdAt: data.created_at as string,
+  };
+}
+
 export function ProfileUser() {
-  const profile = useAuthStore((state) => state.profile);
-  const updateProfileWithUserId = updateProfile.bind(null, profile?.userId);
-  const [state, action, loading] = useActionState(
-    updateProfileWithUserId,
-    undefined
+  const profileState = useAuthStore((state) => state.profile);
+  const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  const { data: profile, isLoading } = useQuery<Omit<Profile, "userId"> | null>(
+    {
+      queryKey: ["profiles"],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from("user_profiles")
+          .select(
+            "id, fullname, email, phone_number, address, photo_profile_url, photo_profile_path, role, created_at"
+          )
+          .eq("user_id", profileState?.userId)
+          .single();
+
+        if (error) toast.error("Gagal", { description: error.message });
+        if (!data) return null;
+
+        return mapToProfile(data);
+      },
+    }
   );
 
-  useEffect(() => {
-    if (state?.status === "success") {
-      toast.success("Berhasil", { description: state.message });
-    }
+  // Mutation for updating profile data with optimistic update
+  const { mutate: mutateProfile, isPending: profileLoading } = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const result = await updateProfile(
+        profileState?.userId,
+        undefined,
+        formData
+      );
 
-    if (state?.status === "error" && state.message) {
-      toast.error("Gagal", { description: state.message });
-    }
-  }, [state]);
+      if (result?.status === "error") {
+        throw new Error(result.message || "Gagal mengubah profile");
+      }
+
+      return {
+        fullname: formData.get("fullname") as string,
+        email: formData.get("email") as string,
+        phoneNumber: formData.get("phone") as string,
+        address: formData.get("address") as string,
+      };
+    },
+    onMutate: async (formData: FormData) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["profiles"] });
+
+      // Snapshot the previous value
+      const previousProfile = queryClient.getQueryData<Omit<Profile, "userId"> | null>(["profiles"]);
+
+      // Optimistically update the cache
+      if (previousProfile) {
+        queryClient.setQueryData<Omit<Profile, "userId"> | null>(["profiles"], {
+          ...previousProfile,
+          fullname: (formData.get("fullname") as string) || previousProfile.fullname,
+          email: (formData.get("email") as string) || previousProfile.email,
+          phoneNumber: (formData.get("phone") as string) || previousProfile.phoneNumber,
+          address: (formData.get("address") as string) || previousProfile.address,
+        });
+      }
+
+      return { previousProfile };
+    },
+    onError: (error, _variables, context) => {
+      // Rollback to previous data on error
+      if (context?.previousProfile) {
+        queryClient.setQueryData(["profiles"], context.previousProfile);
+      }
+      toast.error("Gagal", { description: error.message });
+    },
+    onSuccess: () => {
+      toast.success("Berhasil", { description: "Berhasil mengubah profile" });
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure cache is in sync
+      queryClient.invalidateQueries({ queryKey: ["profiles"] });
+    },
+  });
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    mutateProfile(formData);
+  };
 
   const handleProfileChange = async (image: File) => {
     const supabase = createClient();
+
+    // Snapshot the previous profile for rollback
+    const previousProfile = queryClient.getQueryData<Omit<Profile, "userId"> | null>(["profiles"]);
+
     let imagePath: string | null = null;
 
     if (profile?.photoProfileUrl.includes("default.jpg")) {
@@ -53,7 +143,7 @@ export function ProfileUser() {
       const { data: updateFileData, error: updateFileError } =
         await supabase.storage
           .from("MaintTrack-Assets")
-          .update(`user/${profile?.photoProfilePath}`, image, {
+          .update(profile?.photoProfilePath as string, image, {
             contentType: image.type,
           });
 
@@ -66,6 +156,17 @@ export function ProfileUser() {
     }
 
     const imageUrl = getUrlImage(imagePath);
+
+    // Optimistically update the UI with local preview
+    if (previousProfile) {
+      const localPreviewUrl = URL.createObjectURL(image);
+      queryClient.setQueryData<Omit<Profile, "userId"> | null>(["profiles"], {
+        ...previousProfile,
+        photoProfileUrl: localPreviewUrl,
+        photoProfilePath: imagePath!,
+      });
+    }
+
     const { error: updateProfileError } = await supabase
       .from("user_profiles")
       .update({
@@ -75,16 +176,23 @@ export function ProfileUser() {
       .eq("id", profile!.id);
 
     if (updateProfileError) {
+      // Rollback on error
+      if (previousProfile) {
+        queryClient.setQueryData(["profiles"], previousProfile);
+      }
       toast.error("Gagal", { description: updateProfileError.message });
       return;
     }
+
+    // Refetch to get the real URL from server
+    queryClient.invalidateQueries({ queryKey: ["profiles"] });
 
     toast.success("Berhasil", {
       description: "Berhasil memperbarui photo profile",
     });
   };
 
-  if (!profile) {
+  if (!profile || !profileState) {
     return null;
   }
 
@@ -132,7 +240,7 @@ export function ProfileUser() {
               {profile.role}
             </p>
             <span className="text-md font-light">
-              Dibuat pada: {profile.createdAt.split("T")[0]}
+              Dibuat pada: {profile.createdAt?.split("T")[0] ?? "-"}
             </span>
           </div>
         </Card>
@@ -143,7 +251,7 @@ export function ProfileUser() {
               Informasi Pengguna
             </p>
           </div>
-          <form action={action}>
+          <form onSubmit={handleSubmit}>
             <FieldSet>
               <FieldGroup>
                 <Field>
@@ -153,6 +261,7 @@ export function ProfileUser() {
                     type="text"
                     defaultValue={profile.fullname}
                     name="fullname"
+                    key={`fullname-${profile.fullname}`}
                   />
                 </Field>
                 <Field orientation={"horizontal"}>
@@ -163,6 +272,7 @@ export function ProfileUser() {
                       name="email"
                       id="email"
                       defaultValue={profile.email}
+                      key={`email-${profile.email}`}
                     />
                   </div>
                   <div className="w-full">
@@ -172,6 +282,7 @@ export function ProfileUser() {
                       name="phone"
                       id="phone"
                       defaultValue={profile.phoneNumber}
+                      key={`phone-${profile.phoneNumber}`}
                     />
                   </div>
                 </Field>
@@ -182,11 +293,12 @@ export function ProfileUser() {
                     name="address"
                     id="address"
                     defaultValue={profile.address}
+                    key={`address-${profile.address}`}
                   />
                 </Field>
                 <Field className="flex flex-row justify-end">
-                  <Button type="submit" className="max-w-32">
-                    {loading ? <Spinner /> : "Simpan Profile"}
+                  <Button type="submit" className="max-w-32" disabled={profileLoading}>
+                    {profileLoading ? <Spinner /> : "Simpan Profile"}
                   </Button>
                 </Field>
               </FieldGroup>

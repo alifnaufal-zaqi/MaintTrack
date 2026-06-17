@@ -1,6 +1,9 @@
 "use client";
 
 import { ActionButton } from "@/components/commons/action-button";
+import { DropzoneUpload } from "@/components/commons/dropzone-upload";
+import { FieldInput } from "@/components/commons/field-input";
+import { FieldSelect } from "@/components/commons/field-select";
 import { PaginationButton } from "@/components/commons/pagination-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +17,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { FieldSet, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { SelectItem } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
@@ -24,20 +29,28 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ASSET_TABLE_HEADER } from "@/constants/asset-constant";
+import { ASSET_TABLE_HEADER, STATUS_ASSET } from "@/constants/asset-constant";
+import { useMasterData } from "@/hooks/use-mater-data";
 import usePagination from "@/hooks/use-pagination";
 import useSearch from "@/hooks/use-search";
 import useTotalPage from "@/hooks/use-total-page";
 import { createClient } from "@/lib/client";
-import { AssetPreview } from "@/types/asset";
+import { AssetUpdateSchema } from "@/schemas/asset-update";
+import { AssetPreviewEditable, FormAsset } from "@/types/asset";
+import { Category } from "@/types/categories";
 import { DialogState } from "@/types/dialog-state";
+import { Location } from "@/types/locations";
+import { Vendor } from "@/types/vendor";
+import { calculateNextMaintenanceDate } from "@/utils/calculate-next-maintenance-date";
+import { getUrlImage } from "@/utils/get-url-image";
 import { removeFileFromStorage } from "@/utils/remove-file-from-storage";
+import { validateFormData } from "@/utils/validate-data";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 
 export function ListAssetsPage() {
@@ -50,9 +63,11 @@ export function ListAssetsPage() {
     delete: false,
     update: false,
   });
-  const [selectedAsset, setSelectedAsset] = useState<AssetPreview | null>();
+  const [selectedAsset, setSelectedAsset] =
+    useState<AssetPreviewEditable | null>(null);
+  const [formError, setFormError] = useState<FormAsset | null>(null);
   const { isLoading, data: assets } = useQuery<{
-    data: AssetPreview[] | null;
+    data: AssetPreviewEditable[] | null;
     count: number | null;
   }>({
     queryKey: ["assets", page, limit, keyword],
@@ -77,7 +92,10 @@ export function ListAssetsPage() {
           ),
           status_asset,
           asset_image_url,
-          asset_image_path
+          asset_image_path,
+          purchase_price,
+          purchase_date,
+          maintenance_interval
         `,
           { count: "exact" }
         )
@@ -89,11 +107,11 @@ export function ListAssetsPage() {
         toast.error("Gagal", { description: error.message });
       }
 
-      return { data: data as AssetPreview[] | null, count };
+      return { data: data as AssetPreviewEditable[] | null, count };
     },
   });
   const { mutate: mutationDelete, isPending: deleteLoading } = useMutation({
-    mutationFn: async (asset: AssetPreview) => {
+    mutationFn: async (asset: AssetPreviewEditable) => {
       const result = await removeFileFromStorage(asset.asset_image_path);
 
       if (!result) new Error("Gagal menghapus file");
@@ -114,7 +132,114 @@ export function ListAssetsPage() {
       });
     },
   });
+  const { mutate: mutationUpdate, isPending: updateLoading } = useMutation({
+    mutationFn: async (asset: {
+      id: string;
+      name: string;
+      category_id: string;
+      vendor_id: string;
+      current_location_id: string;
+      purchase_price: number;
+      purchase_date: string;
+      status_asset: string;
+      maintenance_interval: number;
+      next_maintenance_date: string;
+      asset_image_url: string;
+      asset_image_path: string;
+    }) => {
+      const { id, ...updateData } = asset;
+      const { error } = await supabase
+        .from("assets")
+        .update(updateData)
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onError: (error) => toast.error("Gagal", { description: error.message }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      setDialogState((prev) => ({ ...prev, update: false }));
+      toast.success("Berhasil", {
+        description: "Berhasil mengedit data aset",
+      });
+    },
+  });
   const { totalPage } = useTotalPage(assets, limit);
+
+  // Fetch master data for select options in the edit form
+  const { data: categories } = useMasterData<Pick<Category, "id" | "name">[]>({
+    table: "categories",
+    select: "id, name",
+    key: ["categories"],
+  });
+  const { data: vendors } = useMasterData<Pick<Vendor, "id" | "name">[]>({
+    table: "vendors",
+    select: "id, name",
+    key: ["vendors"],
+  });
+  const { data: locations } = useMasterData<Pick<Location, "id" | "name">[]>({
+    table: "locations",
+    select: "id, name",
+    key: ["locations"],
+  });
+
+  const handleUpdate = async (
+    event: SubmitEvent<HTMLFormElement>,
+    asset: AssetPreviewEditable
+  ) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const { error: validationError, result } = validateFormData(
+      formData,
+      AssetUpdateSchema
+    );
+
+    if (validationError) {
+      setFormError(validationError);
+      return;
+    }
+
+    setFormError(null);
+
+    let imageUrl = asset.asset_image_url;
+    let imagePath = asset.asset_image_path;
+
+    const file = formData.get("image") as File;
+    if (file && file.size > 0) {
+      // User uploaded a new image — update in storage
+      const { data: updateFileData, error: updateFileError } =
+        await supabase.storage
+          .from("MaintTrack-Assets")
+          .update(asset.asset_image_path, file, {
+            contentType: file.type,
+          });
+
+      if (updateFileError) {
+        toast.error("Gagal", { description: updateFileError.message });
+        return;
+      }
+
+      imagePath = updateFileData.path;
+      imageUrl = getUrlImage(updateFileData.path);
+    }
+
+    mutationUpdate({
+      id: asset.id,
+      name: result.name,
+      category_id: result.category,
+      vendor_id: result.vendor,
+      current_location_id: result.location,
+      purchase_price: parseInt(result.purchasePrice),
+      purchase_date: result.purchaseDate,
+      status_asset: result.status_asset,
+      maintenance_interval: parseInt(result.maintenanceInterval),
+      next_maintenance_date: calculateNextMaintenanceDate(
+        parseInt(result.maintenanceInterval)
+      ),
+      asset_image_url: imageUrl,
+      asset_image_path: imagePath,
+    });
+  };
 
   return (
     <div className="w-full space-y-4">
@@ -181,6 +306,11 @@ export function ListAssetsPage() {
                     onDetailClick={() =>
                       router.push(`/dashboard/admin/master/assets/${asset.id}`)
                     }
+                    onUpdateClick={() => {
+                      setSelectedAsset(asset);
+                      setFormError(null);
+                      setDialogState((prev) => ({ ...prev, update: true }));
+                    }}
                     onDeleteClick={() => {
                       setSelectedAsset(asset);
                       setDialogState((prev) => ({ ...prev, delete: true }));
@@ -220,6 +350,7 @@ export function ListAssetsPage() {
         totalPages={totalPage}
       />
 
+      {/* DELETE */}
       <Dialog
         open={dialogState.delete}
         onOpenChange={(value) =>
@@ -230,7 +361,7 @@ export function ListAssetsPage() {
           <DialogHeader>
             <DialogTitle>Peringatan</DialogTitle>
             <DialogDescription>
-              Apakah anda yakin ingin menghapus kategori {selectedAsset?.name}?
+              Apakah anda yakin ingin menghapus aset {selectedAsset?.name}?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -239,6 +370,7 @@ export function ListAssetsPage() {
             </DialogClose>
             <Button
               variant={"destructive"}
+              disabled={deleteLoading}
               onClick={() => mutationDelete(selectedAsset!)}
             >
               {deleteLoading ? <Spinner /> : "Ya"}
@@ -246,6 +378,136 @@ export function ListAssetsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* EDIT */}
+      {selectedAsset && (
+        <Dialog
+          open={dialogState.update}
+          onOpenChange={(value) =>
+            setDialogState((prev) => ({ ...prev, update: value }))
+          }
+        >
+          <DialogContent className="w-full lg:max-w-1/2 max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Form Edit Aset</DialogTitle>
+              <DialogDescription>
+                Edit data aset anda disini
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={(event) => handleUpdate(event, selectedAsset)}>
+              <FieldSet>
+                <FieldGroup>
+                  <FieldInput
+                    label="Nama Aset"
+                    type="text"
+                    error={formError?.name?.[0]}
+                    id="name"
+                    name="name"
+                    placeholder="Masukan nama aset"
+                    defaultValue={selectedAsset.name}
+                  />
+                  <FieldSelect
+                    label="Kategori"
+                    id="category"
+                    name="category"
+                    error={formError?.category?.[0]}
+                    defaultValue={selectedAsset.category.id}
+                  >
+                    {categories?.data?.map((category) => (
+                      <SelectItem value={category.id} key={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </FieldSelect>
+                  <FieldSelect
+                    label="Vendor"
+                    id="vendor"
+                    name="vendor"
+                    error={formError?.vendor?.[0]}
+                    defaultValue={selectedAsset.vendor.id}
+                  >
+                    {vendors?.data?.map((vendor) => (
+                      <SelectItem value={vendor.id} key={vendor.id}>
+                        {vendor.name}
+                      </SelectItem>
+                    ))}
+                  </FieldSelect>
+                  <FieldSelect
+                    label="Lokasi"
+                    id="location"
+                    name="location"
+                    error={formError?.location?.[0]}
+                    defaultValue={selectedAsset.current_location.id}
+                  >
+                    {locations?.data?.map((location) => (
+                      <SelectItem value={location.id} key={location.id}>
+                        {location.name}
+                      </SelectItem>
+                    ))}
+                  </FieldSelect>
+                  <FieldInput
+                    error={formError?.purchasePrice?.[0]}
+                    id="price"
+                    name="purchasePrice"
+                    label="Harga Beli"
+                    type="number"
+                    defaultValue={selectedAsset.purchase_price}
+                  />
+                  <FieldInput
+                    error={formError?.purchaseDate?.[0]}
+                    id="date"
+                    label="Tanggal Beli"
+                    type="date"
+                    name="purchaseDate"
+                    defaultValue={selectedAsset.purchase_date}
+                  />
+                  <FieldSelect
+                    label="Status Aset"
+                    id="status"
+                    name="status_asset"
+                    error={formError?.status_asset?.[0]}
+                    defaultValue={selectedAsset.status_asset}
+                  >
+                    {STATUS_ASSET.map((item, index) => (
+                      <SelectItem
+                        value={item}
+                        key={`${item}-${index}`}
+                        className="capitalize"
+                      >
+                        {item}
+                      </SelectItem>
+                    ))}
+                  </FieldSelect>
+                  <FieldInput
+                    error={formError?.maintenanceInterval?.[0]}
+                    id="interval"
+                    name="maintenanceInterval"
+                    label="Perawatan Rutin (bulan)"
+                    type="number"
+                    defaultValue={selectedAsset.maintenance_interval}
+                  />
+                  <DropzoneUpload
+                    id="image"
+                    name="image"
+                    pathName="asset"
+                    label="Gambar Aset (opsional)"
+                    error={formError?.image?.[0]}
+                  />
+                </FieldGroup>
+              </FieldSet>
+
+              <DialogFooter className="mt-4">
+                <DialogClose asChild>
+                  <Button variant="outline">Batal</Button>
+                </DialogClose>
+                <Button type="submit" disabled={updateLoading}>
+                  {updateLoading ? <Spinner /> : "Edit"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

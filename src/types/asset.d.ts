@@ -60,3 +60,6 @@ type AssetPreview = Pick<
 > & {
   qr_tag: string;
 };
+
+type AssetPreviewEditable = AssetPreview &
+  Pick<Asset, "purchase_price" | "purchase_date" | "maintenance_interval">;

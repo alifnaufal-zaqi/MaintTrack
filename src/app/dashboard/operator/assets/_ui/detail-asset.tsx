@@ -10,10 +10,18 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { createClient } from "@/lib/client";
 import { Asset } from "@/types/asset";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, Info, QrCodeIcon } from "lucide-react";
+import { ChevronLeft, Info, Printer, QrCodeIcon } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -55,7 +63,7 @@ export function DetailAsset({ id }: { id: string }) {
         .single();
 
       if (error) {
-        toast.success("Gagal", { description: error.message });
+        toast.error("Gagal", { description: error.message });
       }
 
       return data as Asset | null;
@@ -154,10 +162,38 @@ export function DetailAsset({ id }: { id: string }) {
             <Card className="p-2">
               <AssetBarcode tag={asset?.["qr_tag"] as string} />
             </Card>
-            <Button>
-              <QrCodeIcon />
-              <span>Cetak QR Code</span>
-            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button>
+                  <QrCodeIcon />
+                  <span>Cetak QR Code</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="print:static print:translate-x-0 print:translate-y-0 print:max-w-none print:w-full print:border-none print:shadow-none print:p-0">
+                <DialogHeader className="print:hidden">
+                  <DialogTitle>Detail QrCode</DialogTitle>
+                </DialogHeader>
+                <div className="-mx-4 space-y-2 max-h-[50vh] no-scrollbar overflow-y-auto px-4 py-2 print:max-h-none print:overflow-visible print:space-y-0 print:p-0 print:m-0">
+                  <Card className="p-2 print:border-none print:shadow-none print:w-full print:h-[100vh] print:flex print:items-center print:justify-center print:break-after-page">
+                    <div className="print:scale-150">
+                      <AssetBarcode
+                        tag={asset?.["qr_tag"] as string}
+                        margin="mx-auto"
+                      />
+                    </div>
+                  </Card>
+                </div>
+                <DialogFooter className="print:hidden">
+                  <Button
+                    className="mx-auto"
+                    onClick={() => window.print()}
+                  >
+                    <Printer className="mr-2" />
+                    Cetak
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </Card>
         </div>
       </div>
