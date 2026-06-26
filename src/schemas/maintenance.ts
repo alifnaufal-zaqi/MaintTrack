@@ -9,3 +9,10 @@ export const MaintenanceSchema = z.object({
 export const CompleteMaintenanceSchema = z.object({
   cost: z.string().min(1).trim(),
 });
+
+export const UpdateMaintenanceSchema = z.object({
+  date: z.string().min(1).trim(),
+  type: z.string().min(1).trim(),
+  notes: z.string().optional(),
+  cost: z.string().optional(),
+});

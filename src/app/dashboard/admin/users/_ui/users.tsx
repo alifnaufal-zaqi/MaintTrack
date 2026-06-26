@@ -113,8 +113,8 @@ export function AssetsUsers() {
                   <Image
                     alt={user.fullname}
                     src={user.photo_profile_url}
-                    width={0}
-                    height={0}
+                    width={500}
+                    height={500}
                     className="w-12 h-12 mx-4 rounded-full border"
                   />
                 </TableCell>

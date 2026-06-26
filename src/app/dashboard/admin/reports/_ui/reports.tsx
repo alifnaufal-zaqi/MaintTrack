@@ -310,8 +310,8 @@ export function Reports() {
                 <TableCell className="px-6 py-3">{index + 1}</TableCell>
                 <TableCell className="px-6 py-3">
                   <Image
-                    width={0}
-                    height={0}
+                    width={500}
+                    height={500}
                     alt={history?.asset?.name ?? ""}
                     src={history?.asset?.asset_image_url ?? ""}
                     className="w-12 h-12 rounded-md border object-cover border"

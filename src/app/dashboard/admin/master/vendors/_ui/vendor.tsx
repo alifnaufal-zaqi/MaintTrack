@@ -229,8 +229,8 @@ export function Vendors() {
                 <TableCell className="px-6 py-3">{index + 1}</TableCell>
                 <TableCell className="px-6 py-3">
                   <Image
-                    width={0}
-                    height={0}
+                    width={500}
+                    height={500}
                     alt={vendor.name}
                     src={vendor.logo_url}
                     className="

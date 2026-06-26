@@ -33,10 +33,12 @@ import { Maintenance as MaintenanceType } from "@/types/maintenance";
 import { useQuery } from "@tanstack/react-query";
 import { Filter } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { ChangeEvent, useState } from "react";
 import { toast } from "sonner";
 
 export function Maintenance() {
+  const router = useRouter();
   const supabase = createClient();
   const { page, limit, handleLimitChange, handlePageChange } = usePagination();
   const { keyword, handleKeywordChange } = useSearch();
@@ -147,8 +149,8 @@ export function Maintenance() {
                   <Image
                     alt={maintenance.asset.name}
                     src={maintenance.asset.asset_image_url}
-                    width={0}
-                    height={0}
+                    width={500}
+                    height={500}
                     className="w-12 h-12 rounded-md border"
                   />
                 </TableCell>
@@ -180,7 +182,12 @@ export function Maintenance() {
                   {maintenance.created_by.fullname}
                 </TableCell>
                 <TableCell className="px-6 py-3">
-                  <ActionButton isDetail />
+                  <ActionButton
+                    isDetail
+                    onDetailClick={() =>
+                      router.push(`/dashboard/admin/maintenances/${maintenance.id}`)
+                    }
+                  />
                 </TableCell>
               </TableRow>
             ))}

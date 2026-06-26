@@ -115,8 +115,8 @@ export function FormMaintenance() {
           <Image
             alt={asset?.data?.name ?? ""}
             src={asset?.data?.asset_image_url ?? ""}
-            width={0}
-            height={0}
+            width={500}
+            height={500}
             className="w-16 h-16 border rounded-md"
           />
 

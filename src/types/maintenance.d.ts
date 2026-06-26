@@ -3,7 +3,7 @@ import { User } from "./users";
 
 export type Maintenance = {
   id: string;
-  asset: Pick<Asset, "name" | "asset_image_url">;
+  asset: Pick<Asset, "name" | "asset_image_url" | "id">;
   maintenance_date: string;
   maintenance_type: string;
   created_by: Pick<User, "fullname">;

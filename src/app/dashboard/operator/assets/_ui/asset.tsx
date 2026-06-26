@@ -234,22 +234,32 @@ export function ListAssetsPage_Operator() {
                     Cetak QRCode
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="print:static print:translate-x-0 print:translate-y-0 print:max-w-none print:w-full print:border-none print:shadow-none print:p-0">
+                <DialogContent className="print:!absolute print:!top-0 print:!left-0 print:!translate-x-0 print:!translate-y-0 print:!transform-none print:!w-[100vw] print:!max-w-none print:!m-0 print:!p-0 print:!border-none print:!shadow-none print:!bg-white print:!z-[99999] print:!rounded-none print:!block">
                   <DialogHeader className="print:hidden">
                     <DialogTitle>Detail QrCode</DialogTitle>
                   </DialogHeader>
-                  <div className="-mx-4 space-y-2 max-h-[50vh] no-scrollbar overflow-y-auto px-4 py-2 print:max-h-none print:overflow-visible print:space-y-0 print:p-0 print:m-0">
+                  
+                  {/* Screen view for multiple QR codes */}
+                  <div className="print:hidden -mx-4 space-y-2 max-h-[50vh] no-scrollbar overflow-y-auto px-4 py-2">
                     {qrTags.map((qr, index) => (
-                      <Card
-                        key={index}
-                        className="p-2 print:border-none print:shadow-none print:w-full print:h-[100vh] print:flex print:items-center print:justify-center print:break-after-page"
-                      >
-                        <div className="print:scale-150">
-                          <AssetBarcode tag={qr} margin="mx-auto" />
-                        </div>
+                      <Card key={index} className="p-2">
+                        <AssetBarcode tag={qr} margin="mx-auto" />
                       </Card>
                     ))}
                   </div>
+
+                  {/* Print-only view for multiple QR codes */}
+                  <div className="hidden print:block print:w-full">
+                    {qrTags.map((qr, index) => (
+                      <div
+                        key={`print-${index}`}
+                        className="print:w-full print:h-[100vh] print:flex print:items-center print:justify-center print:break-after-page"
+                      >
+                        <AssetBarcode tag={qr} margin="mx-auto" size={400} />
+                      </div>
+                    ))}
+                  </div>
+
                   <DialogFooter className="print:hidden">
                     <Button className="mx-auto" onClick={() => window.print()}>
                       <Printer className="mr-2" />
@@ -295,8 +305,8 @@ export function ListAssetsPage_Operator() {
                   )}
                   <TableCell className="px-6 py-3">
                     <Image
-                      width={0}
-                      height={0}
+                      width={500}
+                      height={500}
                       src={asset.asset_image_url}
                       alt={asset.name}
                       className="w-12 h-12 rounded-md object-cover border"

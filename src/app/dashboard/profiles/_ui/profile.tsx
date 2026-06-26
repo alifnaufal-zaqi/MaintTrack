@@ -19,7 +19,6 @@ import Link from "next/link";
 import { ChangeEvent, FormEvent } from "react";
 import { toast } from "sonner";
 
-// Helper to map Supabase snake_case response to camelCase Profile type
 function mapToProfile(data: Record<string, unknown>): Omit<Profile, "userId"> {
   return {
     id: data.id as string,
@@ -41,7 +40,8 @@ export function ProfileUser() {
 
   const { data: profile, isLoading } = useQuery<Omit<Profile, "userId"> | null>(
     {
-      queryKey: ["profiles"],
+      queryKey: ["profiles", profileState?.userId],
+      enabled: !!profileState?.userId,
       queryFn: async () => {
         const { data, error } = await supabase
           .from("user_profiles")
@@ -84,16 +84,22 @@ export function ProfileUser() {
       await queryClient.cancelQueries({ queryKey: ["profiles"] });
 
       // Snapshot the previous value
-      const previousProfile = queryClient.getQueryData<Omit<Profile, "userId"> | null>(["profiles"]);
+      const previousProfile = queryClient.getQueryData<Omit<
+        Profile,
+        "userId"
+      > | null>(["profiles"]);
 
       // Optimistically update the cache
       if (previousProfile) {
         queryClient.setQueryData<Omit<Profile, "userId"> | null>(["profiles"], {
           ...previousProfile,
-          fullname: (formData.get("fullname") as string) || previousProfile.fullname,
+          fullname:
+            (formData.get("fullname") as string) || previousProfile.fullname,
           email: (formData.get("email") as string) || previousProfile.email,
-          phoneNumber: (formData.get("phone") as string) || previousProfile.phoneNumber,
-          address: (formData.get("address") as string) || previousProfile.address,
+          phoneNumber:
+            (formData.get("phone") as string) || previousProfile.phoneNumber,
+          address:
+            (formData.get("address") as string) || previousProfile.address,
         });
       }
 
@@ -125,7 +131,10 @@ export function ProfileUser() {
     const supabase = createClient();
 
     // Snapshot the previous profile for rollback
-    const previousProfile = queryClient.getQueryData<Omit<Profile, "userId"> | null>(["profiles"]);
+    const previousProfile = queryClient.getQueryData<Omit<
+      Profile,
+      "userId"
+    > | null>(["profiles"]);
 
     let imagePath: string | null = null;
 
@@ -192,7 +201,15 @@ export function ProfileUser() {
     });
   };
 
-  if (!profile || !profileState) {
+  if (isLoading || !profileState) {
+    return (
+      <div className="w-full h-48 flex items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
+
+  if (!profile) {
     return null;
   }
 
@@ -213,8 +230,8 @@ export function ProfileUser() {
               className="w-32 h-32 mt-4 object-cover rounded-md"
               alt={profile.id}
               src={profile.photoProfileUrl}
-              width={0}
-              height={0}
+              width={500}
+              height={500}
             />
             <label
               htmlFor="photo"
@@ -297,7 +314,11 @@ export function ProfileUser() {
                   />
                 </Field>
                 <Field className="flex flex-row justify-end">
-                  <Button type="submit" className="max-w-32" disabled={profileLoading}>
+                  <Button
+                    type="submit"
+                    className="max-w-32"
+                    disabled={profileLoading}
+                  >
                     {profileLoading ? <Spinner /> : "Simpan Profile"}
                   </Button>
                 </Field>

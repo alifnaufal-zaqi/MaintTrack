@@ -1,5 +1,6 @@
 "use client";
 
+import { ActionButton } from "@/components/commons/action-button";
 import { Camera } from "@/components/commons/camera";
 import { FieldInput } from "@/components/commons/field-input";
 import { PaginationButton } from "@/components/commons/pagination-button";
@@ -160,8 +161,8 @@ export function AssetMovement() {
                   <Image
                     alt={movement.asset.name}
                     src={movement.asset.asset_image_url}
-                    width={0}
-                    height={0}
+                    width={500}
+                    height={500}
                     className="w-12 h-12 rounded-md border"
                   />
                 </TableCell>
@@ -179,6 +180,14 @@ export function AssetMovement() {
                 </TableCell>
                 <TableCell className="px-6 py-3">
                   {movement.pic.fullname}
+                </TableCell>
+                <TableCell className="px-6 py-3">
+                  <ActionButton
+                    isDetail
+                    onDetailClick={() =>
+                      router.push(`/dashboard/operator/movements/${movement.id}`)
+                    }
+                  />
                 </TableCell>
               </TableRow>
             ))}

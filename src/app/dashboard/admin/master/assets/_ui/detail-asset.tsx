@@ -151,8 +151,8 @@ export function DetailAsset({ id }: { id: string }) {
         <div className="flex lg:flex-col flex-row gap-4 items-center">
           <Card className="p-2 max-h-96 w-full">
             <Image
-              width={0}
-              height={0}
+              width={500}
+              height={500}
               className="w-full h-full object-cover"
               alt={asset?.name as string}
               src={asset?.asset_image_url as string}
@@ -169,19 +169,25 @@ export function DetailAsset({ id }: { id: string }) {
                   <span>Cetak QR Code</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="print:static print:translate-x-0 print:translate-y-0 print:max-w-none print:w-full print:border-none print:shadow-none print:p-0">
+              <DialogContent className="print:!fixed print:!top-0 print:!left-0 print:!translate-x-0 print:!translate-y-0 print:!transform-none print:!w-[100vw] print:!h-[100vh] print:!max-w-none print:!m-0 print:!p-0 print:!border-none print:!shadow-none print:!bg-white print:!z-[99999] print:!rounded-none print:!flex print:!flex-col print:!items-center print:!justify-center">
                 <DialogHeader className="print:hidden">
                   <DialogTitle>Detail QrCode</DialogTitle>
                 </DialogHeader>
-                <div className="-mx-4 space-y-2 max-h-[50vh] no-scrollbar overflow-y-auto px-4 py-2 print:max-h-none print:overflow-visible print:space-y-0 print:p-0 print:m-0">
-                  <Card className="p-2 print:border-none print:shadow-none print:w-full print:h-[100vh] print:flex print:items-center print:justify-center print:break-after-page">
-                    <div className="print:scale-150">
-                      <AssetBarcode
-                        tag={asset?.["qr_tag"] as string}
-                        margin="mx-auto"
-                      />
-                    </div>
+                <div className="print:hidden -mx-4 space-y-2 max-h-[50vh] no-scrollbar overflow-y-auto px-4 py-2">
+                  <Card className="p-2">
+                    <AssetBarcode
+                      tag={asset?.["qr_tag"] as string}
+                      margin="mx-auto"
+                    />
                   </Card>
+                </div>
+                {/* Print only container for barcode */}
+                <div className="hidden print:flex print:w-full print:h-full print:items-center print:justify-center">
+                  <AssetBarcode
+                    tag={asset?.["qr_tag"] as string}
+                    margin="mx-auto"
+                    size={400}
+                  />
                 </div>
                 <DialogFooter className="print:hidden">
                   <Button

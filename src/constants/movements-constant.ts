@@ -7,6 +7,7 @@ export const MOVEMENTS_TABLE_HEADER = [
   "lokasi tujuan",
   "tanggal pindah",
   "pic",
+  "aksi",
 ];
 
 export const DROPDOWN_MENUS = [

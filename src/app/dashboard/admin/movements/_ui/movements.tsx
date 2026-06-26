@@ -1,5 +1,6 @@
 "use client";
 
+import { ActionButton } from "@/components/commons/action-button";
 import { PaginationButton } from "@/components/commons/pagination-button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,9 +21,11 @@ import { createClient } from "@/lib/client";
 import { Movement as MovementType } from "@/types/movements";
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 export function Movements() {
+  const router = useRouter();
   const supabase = createClient();
   const { handleKeywordChange, keyword } = useSearch();
   const { limit, page, handleLimitChange, handlePageChange } = usePagination();
@@ -103,8 +106,8 @@ export function Movements() {
                   <Image
                     alt={movement.asset.name}
                     src={movement.asset.asset_image_url}
-                    width={0}
-                    height={0}
+                    width={500}
+                    height={500}
                     className="w-12 h-12 rounded-md border"
                   />
                 </TableCell>
@@ -122,6 +125,14 @@ export function Movements() {
                 </TableCell>
                 <TableCell className="px-6 py-3">
                   {movement.pic.fullname}
+                </TableCell>
+                <TableCell className="px-6 py-3">
+                  <ActionButton
+                    isDetail
+                    onDetailClick={() =>
+                      router.push(`/dashboard/admin/movements/${movement.id}`)
+                    }
+                  />
                 </TableCell>
               </TableRow>
             ))}

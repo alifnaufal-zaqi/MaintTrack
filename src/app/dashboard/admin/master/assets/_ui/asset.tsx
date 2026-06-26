@@ -280,8 +280,8 @@ export function ListAssetsPage() {
               <TableRow key={asset.id}>
                 <TableCell className="px-6 py-3">
                   <Image
-                    width={0}
-                    height={0}
+                    width={500}
+                    height={500}
                     src={asset.asset_image_url}
                     alt={asset.name}
                     className="w-12 h-12 rounded-md object-cover border"
