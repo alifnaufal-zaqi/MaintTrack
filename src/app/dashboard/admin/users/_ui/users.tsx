@@ -1,5 +1,6 @@
 "use client";
 
+import { deleteUser } from "@/app/actions/delete-user";
 import { resetPassword } from "@/app/actions/reset-password";
 import { ActionButton } from "@/components/commons/action-button";
 import { FieldInput } from "@/components/commons/field-input";
@@ -36,7 +37,7 @@ import { Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, useActionState, useEffect, useState } from "react";
+import { ChangeEvent, useActionState, useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 export function AssetsUsers() {
@@ -56,7 +57,26 @@ export function AssetsUsers() {
     resetPasswordWithId,
     undefined
   );
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isPending, startTransition] = useTransition();
+
   const { totalPage } = useTotalPage(users, limit);
+
+  const handleDeleteUser = () => {
+    if (!userToDelete) return;
+    startTransition(async () => {
+      const response = await deleteUser(userToDelete.user_id);
+      if (response.status === "success") {
+        toast.success("Berhasil", { description: response.message });
+        setIsDeleteDialogOpen(false);
+        setUserToDelete(null);
+        router.refresh();
+      } else {
+        toast.error("Gagal", { description: response.message });
+      }
+    });
+  };
 
   useEffect(() => {
     if (state?.status === "success") {
@@ -131,6 +151,11 @@ export function AssetsUsers() {
                     onResetPasswordClick={() => {
                       setSelectedUser(user);
                       setDialogState((prev) => ({ ...prev, reset: true }));
+                    }}
+                    isDelete
+                    onDeleteClick={() => {
+                      setUserToDelete(user);
+                      setIsDeleteDialogOpen(true);
                     }}
                   />
                 </TableCell>
@@ -210,6 +235,40 @@ export function AssetsUsers() {
               <Button type="submit">{loading ? <Spinner /> : "Edit"}</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isDeleteDialogOpen}
+        onOpenChange={(value) => {
+          if (!isPending) {
+            setIsDeleteDialogOpen(value);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Hapus Pengguna</DialogTitle>
+            <DialogDescription>
+              Apakah Anda yakin ingin menghapus pengguna ini? Semua profil pengguna ini juga akan ikut terhapus.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button
+              variant={"outline"}
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={isPending}
+            >
+              Tidak
+            </Button>
+            <Button
+              variant={"destructive"}
+              onClick={handleDeleteUser}
+              disabled={isPending}
+            >
+              {isPending ? <Spinner /> : "Ya"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
