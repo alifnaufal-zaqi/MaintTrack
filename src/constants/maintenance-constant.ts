@@ -4,7 +4,6 @@ export const MAINTENANCE_TABLE_HEADER = [
   "tanggal",
   "tipe maintenance",
   "status progres",
-  "cost",
   "pic",
   "aksi",
 ];
