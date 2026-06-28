@@ -57,7 +57,7 @@ export function Maintenance() {
   const { keyword, handleKeywordChange } = useSearch();
   const [type, setType] = useState<(typeof MAINTENANCE_TYPE)[number]>("all");
   const { data: maintenances, isLoading } = useQuery<{
-    data: Omit<Maintenance, "notes">[] | null;
+    data: Omit<Maintenance, "notes" | "cost">[] | null;
     count: number | null;
   }>({
     queryKey: ["maintenances", page, limit, keyword, type],
@@ -73,7 +73,6 @@ export function Maintenance() {
               ),
               maintenance_date,
               maintenance_type,
-              cost,
               created_by:user_profiles!inner (
                 fullname
               ),
@@ -209,7 +208,6 @@ export function Maintenance() {
                     {maintenance.progress_status}
                   </Badge>
                 </TableCell>
-                <TableCell className="px-6 py-3">{maintenance.cost}</TableCell>
                 <TableCell className="px-6 py-3">
                   {maintenance.created_by.fullname}
                 </TableCell>
@@ -217,7 +215,9 @@ export function Maintenance() {
                   <ActionButton
                     isDetail
                     onDetailClick={() =>
-                      router.push(`/dashboard/operator/maintenances/${maintenance.id}`)
+                      router.push(
+                        `/dashboard/operator/maintenances/${maintenance.id}`
+                      )
                     }
                   />
                 </TableCell>
